@@ -13,6 +13,8 @@ export interface Evidence {
   line: number | null;
   snippet: string | null;
   sink: boolean;
+  /** found only in a clean view of the line ("at"/"dot", base64, Indic digits...) */
+  disguised: boolean;
 }
 
 export interface Reason {

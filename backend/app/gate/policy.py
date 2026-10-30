@@ -21,6 +21,7 @@ RULE_IDS = {
     "R6_OUT_OF_INTENT",
     "R7_HIGH_IMPACT",
     "R8_TRIFECTA",
+    "R11_LOOKALIKE",
 }
 
 

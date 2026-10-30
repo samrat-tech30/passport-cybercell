@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from app.contracts import VERDICT_RANK, Capsule, Decision, Evidence, Origin, Reason, Verdict
+from app.gate.disguise import fold_lookalikes
 from app.gate.policy import Policy
 from app.gate.segments import SegmentStore
 from app.gate.tracer import trace
@@ -37,6 +38,21 @@ def _where(ev: Evidence) -> str:
     if ev.source and ev.line:
         return f"{ev.source}, line {ev.line}"
     return ev.source or "an unknown source"
+
+
+def _lookalike_of(value: str, ctx: GateContext) -> str | None:
+    """The trusted or user-typed value this one imitates, for the message only. Never used to allow."""
+    folded = fold_lookalikes(value).lower()
+    if not folded.isascii():
+        return None
+    for known in ctx.world.vendors.values():
+        if known.lower() == folded:
+            return known
+    user = ctx.store.get("user")
+    if user and folded in user.text.lower():
+        i = user.text.lower().index(folded)
+        return user.text[i : i + len(folded)]
+    return None
 
 
 def _safe_redact(ctx: GateContext, args: Any) -> dict[str, Any]:
@@ -119,7 +135,8 @@ def _decide(ctx: GateContext, tool: str, raw_args: Any, step: int) -> Decision:
             add(
                 "R3_SINK_UNTRUSTED",
                 Verdict.DENY,
-                f"'{arg}' = {ev.value} came from {_where(ev)}: content you didn't write can't choose this.",
+                f"'{arg}' = {ev.value} came from {_where(ev)}{' (written in disguise)' if ev.disguised else ''}:"
+                " content you didn't write can't choose this.",
                 ev,
             )
         elif ev.origin == Origin.SECRET and tool in P.egress:
@@ -129,6 +146,17 @@ def _decide(ctx: GateContext, tool: str, raw_args: Any, step: int) -> Decision:
                 "R5_SINK_INVENTED",
                 Verdict.REQUIRE_APPROVAL,
                 f"'{arg}' = {ev.value} wasn't typed by you or found in a trusted source (the AI wrote it after reading outside content).",
+                ev,
+            )
+
+        # R11: addresses, accounts, paths and keys are plain ASCII. Any other character is a disguise.
+        if isinstance(args[arg], str) and not args[arg].isascii():
+            twin = _lookalike_of(args[arg], ctx)
+            add(
+                "R11_LOOKALIKE",
+                Verdict.DENY,
+                f"'{arg}' = {ev.value} contains look-alike characters"
+                + (f" (looks like {twin})." if twin else " that are not plain letters or digits."),
                 ev,
             )
 

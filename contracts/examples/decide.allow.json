@@ -45,7 +45,8 @@
           "source": "Your request",
           "line": 1,
           "snippet": "Summarise my email and send it to priya@nimbus.test",
-          "sink": true
+          "sink": true,
+          "disguised": false
         }
       ],
       "shield_on": true,

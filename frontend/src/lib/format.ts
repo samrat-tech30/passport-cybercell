@@ -10,8 +10,9 @@ export const ORIGIN_LABEL: Record<Origin, string> = {
 };
 
 export function whereFrom(ev: Evidence): string {
-  if (ev.origin === "untrusted" && ev.source) return ev.line ? `${ev.source}, line ${ev.line}` : ev.source;
-  return ORIGIN_LABEL[ev.origin];
+  const disguise = ev.disguised && (ev.origin === "untrusted" || ev.origin === "secret") ? " (written in disguise)" : "";
+  if (ev.origin === "untrusted" && ev.source) return `${ev.line ? `${ev.source}, line ${ev.line}` : ev.source}${disguise}`;
+  return `${ORIGIN_LABEL[ev.origin]}${disguise}`;
 }
 
 export const STAMP: Record<Verdict, string> = { ALLOW: "Allowed", REQUIRE_APPROVAL: "Needs you", DENY: "Denied" };

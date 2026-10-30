@@ -2,7 +2,7 @@
 
 > Claude: the session-start hook loads this file. Update it at the end of every task (`/checkpoint`, `/handoff`). Keep it under 150 lines; details go to AI-LOG.md.
 
-**Last updated:** 2026-10-30 19:45 IST (starter delivered)
+**Last updated:** 2026-10-30 IST (V2-B built on feat/v2b-disguise, not merged)
 **Live URLs:** frontend <…> · backend <…>
 **Next task:** V1-0 setup on every laptop, then each person opens their prompt in `prompts/`.
 
@@ -12,6 +12,12 @@
 - V1-3 UI: Agent tab (stamps, origin chips, evidence drawer, approval dialog, attacker panel), Scoreboard, Audit
 - 11 scenarios (s1–s8b); eval: attacks 7/7 → 0/7, legit tasks 6/6 → 6/6, 0 popups on clean legit tasks
 - 85 backend tests, `make check` green, CI workflow, Dockerfile, deploy notes
+
+## Done (V2-B, Person A, branch feat/v2b-disguise, not committed yet)
+- Disguise-proof tracing (`gate/disguise.py`): "at"/"dot", base64, Indic digits, 3+ digit words, zero-width; s7b/s7c now DENY with the line shown; new s7d (Kannada digits), s7e (zero-width)
+- R11_LOOKALIKE (non-ASCII in a sink value, "looks like <value>"); canaries checked in disguise too; `Evidence.disguised` in the contract
+- Eval: attacks 9/9 → 0/9, legit 7/7 → 7/7, 0 popups on clean legit tasks; 109 backend tests
+- `make check` itself can't run in the Claude sandbox (check.sh writes /tmp); each step was run by hand and passed. Run `make check` on a laptop before merging.
 
 ## Not verified yet
 - Live LLM mode against a real provider (code tested with a fake client only)
