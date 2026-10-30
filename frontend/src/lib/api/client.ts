@@ -71,7 +71,7 @@ export const api = {
 export function subscribe(sessionId: string, onEvent: (e: StreamEvent) => void, onError: (msg: string) => void): () => void {
   const es = new EventSource(`${API_URL}/sessions/${sessionId}/events`);
   const types = ["session_started", "capsule", "llm_step", "decision", "approval_needed", "approval_result",
-    "tool_result", "world_event", "done", "error"];
+    "tool_result", "world_event", "gateway_call", "done", "error"];
   let failures = 0; // EventSource retries forever; give up after 3 failed reconnects in a row so the UI never spins
   for (const t of types) {
     es.addEventListener(t, (msg) => {

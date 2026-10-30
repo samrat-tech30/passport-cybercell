@@ -105,9 +105,9 @@ def get_session(session_id: str) -> dict[str, Any]:
     pending = [
         d.model_dump(mode="json")
         for did, (sid, _) in list(PENDING.items())
-        if sid == session_id
+        if sid == session_id and sid in SESSIONS
         for d in [SESSIONS[sid].decisions.get(did)]
-        if sid in SESSIONS and d
+        if d
     ]
     return {
         "session": row,

@@ -36,6 +36,7 @@ log = logging.getLogger("passport.gateway")
 
 NIMBUS_SERVER = Path(__file__).resolve().parents[1] / "nimbus_mcp" / "server.py"
 FAIL_CLOSED = "PASSPORT unreachable or refused, failing closed"
+SESSION_LOST = "PASSPORT session lost (backend restarted or reset); restart the client. Failing closed"
 HTTP_TIMEOUT_S = 10.0
 
 START_TASK = types.Tool(
@@ -116,6 +117,9 @@ class Gateway:
         if status == 409 and _code(body) == "intent_required":
             log.info("tool=%s verdict=NO_INTENT run=False", name)
             raise Refused("PASSPORT refused: call start_task with the user's request first")
+        if status == 404 and _code(body) == "session_not_found":
+            log.info("tool=%s session_lost run=False", name)
+            raise Refused(SESSION_LOST)
         if status != 200 or not _decide_shape(body):
             log.info("tool=%s verdict=UNREADABLE run=False", name)
             raise Refused(FAIL_CLOSED)
@@ -123,6 +127,9 @@ class Gateway:
         log.info("tool=%s verdict=%s rule=%s run=%s", name, d["verdict"], d["rule_id"], run)
         if not run:
             raise Refused(_refusal_text(body))
+        if not self._run_is_consistent(d):  # a buggy or spoofed answer must not run a tool
+            log.info("tool=%s inconsistent_answer run=False", name)
+            raise Refused(FAIL_CLOSED)
 
         result = await self.upstream.call_tool(name, args)
         output = "\n".join(c.text for c in result.content if getattr(c, "type", "") == "text")
@@ -138,6 +145,17 @@ class Gateway:
         if d["verdict"] != "ALLOW":  # monitor mode: say what PASSPORT would have done
             return _text(f"[{body['message']}]\n{output}")
         return _text(output)
+
+    def _run_is_consistent(self, d: dict[str, Any]) -> bool:
+        """run=true is believed only if the decision itself allows it (shield on) and the backend
+        agrees on the shield mode this gateway was started with."""
+        if d.get("shield_on") is not self.shield_on:
+            return False
+        if not self.shield_on:
+            return True  # monitor mode: every call runs, the verdict is only reported
+        return d["verdict"] == "ALLOW" or (
+            d["verdict"] == "REQUIRE_APPROVAL" and d.get("approval") == "approved"
+        )
 
     async def _start_task(self, ctx: Any, args: dict[str, Any]) -> types.CallToolResult:
         request = args.get("request")

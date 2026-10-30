@@ -275,6 +275,10 @@ def test_approval_answered_in_time_lets_the_call_run(gw_env):
     out = _pay_flow(True)
     assert out["decision"]["verdict"] == "REQUIRE_APPROVAL" and out["decision"]["approval"] == "approved"
     assert out["run"] is True
+    assert (
+        out["message"].startswith("PASSPORT REQUIRE_APPROVAL R7") and "approved by the user" in out["message"]
+    )
+    assert "monitor mode" not in out["message"]
 
 
 def test_approval_rejected_or_unanswered_refuses_the_call(gw_env):
@@ -294,3 +298,14 @@ def test_two_sessions_never_affect_each_other(client):
     assert d["run"] is False
     assert all(not (p.get("segment_id") or "").startswith("email:") for p in d["decision"]["passports"])
     assert client.get(f"/sessions/{b}").json()["decisions"][0]["session_id"] == b
+
+
+def test_a_gateway_session_is_never_evicted_by_other_sessions(client, monkeypatch):
+    import app.sessions as sessions
+
+    monkeypatch.setattr(sessions, "MAX_SESSIONS_IN_MEMORY", 2)
+    sid = new_session(client)
+    for _ in range(4):
+        client.post("/sessions", json={"scenario_id": "s1"})
+    assert sid in sessions.SESSIONS and len(sessions.SESSIONS) == 2  # the gateway session + the newest
+    assert decide(client, sid, "list_unread_emails")["run"] is True

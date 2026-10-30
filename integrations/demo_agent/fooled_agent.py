@@ -52,6 +52,7 @@ async def main(shield: str) -> int:
         "PASSPORT_SHIELD": shield,
         "PASSPORT_AGENT_NAME": f"fooled_agent (shield {shield})",
         "NIMBUS_INBOX": "s2_hidden_instruction",
+        "GATEWAY_APPROVAL_WAIT_S": os.environ.get("GATEWAY_APPROVAL_WAIT_S", "40"),  # same as the backend's
     }
     params = StdioServerParameters(command=sys.executable, args=[str(GATEWAY)], env=env)
     print(f"PASSPORT shield {shield.upper()} - request: {REQUEST}\n")

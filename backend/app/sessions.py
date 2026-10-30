@@ -155,8 +155,7 @@ def create_session(
         repo.create_session(sid, scenario.id if scenario else None, request, shield_on, mode)
         repo.set_session_capsule(sid, capsule.model_dump())
     SESSIONS[sid] = s
-    while len(SESSIONS) > MAX_SESSIONS_IN_MEMORY:
-        SESSIONS.popitem(last=False)
+    _evict()
     return s
 
 
@@ -193,9 +192,16 @@ def create_gateway_session(settings: Settings, *, agent_name: str, client: str, 
     )
     repo.create_gateway_session(sid, agent_name, client, shield_on)
     SESSIONS[sid] = s
-    while len(SESSIONS) > MAX_SESSIONS_IN_MEMORY:
-        SESSIONS.popitem(last=False)
+    _evict()
     return s
+
+
+def _evict() -> None:
+    """Keep memory bounded, oldest first, but never drop a gateway session: its client (Claude
+    Desktop) lives for hours and would get 404 for every call from then on."""
+    excess = len(SESSIONS) - MAX_SESSIONS_IN_MEMORY
+    for sid in [k for k, v in SESSIONS.items() if v.mode != "gateway"][: max(0, excess)]:
+        del SESSIONS[sid]
 
 
 def resolve_approval(decision_id: str, approve: bool) -> bool:

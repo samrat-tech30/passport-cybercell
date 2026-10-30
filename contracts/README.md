@@ -89,7 +89,7 @@ The MCP gateway (`prompts/GATEWAY-PROMPTS.md`) puts PASSPORT between an outside 
 
 - An approval belongs to that one decision with those exact args and can't be reused. The same call again is a new decision and a new approval.
 - After the wait ends, `POST /approvals/{decision_id}` gets 404 `approval_not_pending`.
-- `decision.approval` is filled with `approved` / `rejected` / `timeout`; `decision.executed` equals `run`.
+- `decision.approval` is filled with `approved` / `rejected` / `timeout`; `decision.executed` equals `run`: it means the call was **granted**, not that the upstream really ran (the gateway can still refuse if its own wait ran out or /observe fails).
 - `message` is plain words for the agent, e.g. `PASSPORT DENY R3_SINK_UNTRUSTED: …`.
 - Any exception while handling `/decide` → 200 with an R0 DENY decision and `run: false` (fail closed), never a 500 that a caller could misread.
 
