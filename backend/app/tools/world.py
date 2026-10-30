@@ -44,6 +44,9 @@ class World:
         self.vendors: dict[str, str] = {
             k: v for k, v in _load_json(WORLD_DIR / "vendors.json").items() if not k.startswith("_")
         }
+        self.contacts: dict[str, str] = {
+            k: v for k, v in _load_json(WORLD_DIR / "contacts.json").items() if not k.startswith("_")
+        }
         prefixes = {k: v for k, v in _load_json(WORLD_DIR / "vault.json").items() if not k.startswith("_")}
         # Random canary per session: a fixed value could be memorised, logged or committed.
         self.vault: dict[str, str] = {

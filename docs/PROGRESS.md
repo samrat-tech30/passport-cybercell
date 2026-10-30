@@ -26,7 +26,7 @@
 ## Tasks for M2 (gaps found by Part 1 attacks, THREAT-MODEL §5)
 - [x] Label every email field (Reply-To, Cc, attachment names) in `segments._add_email`: s9b and s13b are now DENY R3 (tests/test_segments.py). Done by Person A on feat/email-fields. Red-teamed: 6 findings (F1–F6) fixed, 31 tests in tests/test_redteam_email_fields.py.
 - [ ] Split values across segments (s10): trace a value that is the join of pieces from two untrusted segments, or say why not in DECISIONS.md.
-- [ ] Reply false positive: a trusted contacts directory (like vendors.json) so "Reply to Rahul's email" works without typing the address. Needs a scenario + test.
+- [x] Reply false positive: contact directory, trusted only for names the user typed. "Reply to Rahul's email" is ALLOW, the injected address DENY (s9c, tests/test_contacts.py). Done by Person A on feat/email-fields.
 - [ ] Optional: flag ASCII look-alike sender domains (vs vendor registry / company domain) in the approval popup message only, never in the verdict.
 
 ## Not verified yet

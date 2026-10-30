@@ -1,0 +1,7 @@
+{
+  "_comment": "Trusted contact directory (our own config). A contact is trusted ONLY in a session whose request names them (gate/segments.py new_store). Synthetic data.",
+  "Priya": "priya@nimbus.test",
+  "Rahul": "rahul@nimbus.test",
+  "Meera": "meera@nimbus.test",
+  "Arjun": "arjun@nimbus.test"
+}

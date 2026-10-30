@@ -7,6 +7,7 @@ runs (ingest), so a value can only have a passport from content that really ente
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from app.contracts import Segment, Trust
@@ -90,6 +91,19 @@ class SegmentStore:
         # Action tools (send, pay, delete) return fixed confirmations with no values: nothing to label.
 
 
+def named_contacts(user_request: str, contacts: dict[str, str]) -> dict[str, str]:
+    """The contacts whose name the user typed as a whole word ("Rahul's" yes, "Priyanka" not Priya).
+
+    Only these are trusted: decide() doesn't check recipients against the request, so trusting the whole
+    directory would let an email steer a send to any colleague. Built from the user's words only, before
+    any tool runs, so nothing an attacker writes can add a name."""
+    return {
+        name: addr
+        for name, addr in contacts.items()
+        if re.search(rf"(?<!\w){re.escape(name)}(?!\w)", user_request, re.IGNORECASE)
+    }
+
+
 def new_store(user_request: str, world: World) -> SegmentStore:
     s = SegmentStore()
     s.add("user", "Your request", Trust.USER, user_request)
@@ -99,6 +113,14 @@ def new_store(user_request: str, world: World) -> SegmentStore:
         Trust.TRUSTED,
         "\n".join(f"{name}: {acct}" for name, acct in world.vendors.items()),
     )
+    named = named_contacts(user_request, world.contacts)
+    if named:
+        s.add(
+            "contacts",
+            "Contacts you named (trusted config)",
+            Trust.TRUSTED,
+            "\n".join(f"{name}: {addr}" for name, addr in named.items()),
+        )
     for name, value in world.vault.items():
         # Known to the gate so a secret can never be laundered, never shown to the agent.
         s.add(f"vault:{name}", f"Vault secret {name}", Trust.SECRET, value, hidden=True)
