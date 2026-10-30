@@ -44,7 +44,7 @@ The real task still works; only the hijacked part dies. Rewording can't help the
 | s8 / s8b | fail-closed | gate crashes / nobody answers approval | DENY |
 
 ## 6. The demo path (3 minutes, details in PITCH.md)
-S2 shield OFF → canary key appears in "What the attacker received" → same scenario shield ON → DENY cards, click "Show evidence" → hidden line 13 highlighted → S5 approval popup → Scoreboard (7/7 → 0/7 attacks, 6/6 legit tasks kept) → Audit tamper demo.
+S2 shield OFF → canary key appears in "What the attacker received" → same scenario shield ON → DENY cards, click "Show evidence" → hidden line 13 highlighted → S5 approval popup → Scoreboard (9/9 → 0/9 attacks, 7/7 legit tasks kept) → Audit tamper demo.
 
 ## 7. Data and privacy
 All data is synthetic, `.test` domains only. Canary secrets are random per session and are redacted before anything is stored, streamed or shown. No personal data is collected. The SQLite file holds sessions, decisions (redacted), world events, the audit chain and eval runs.
