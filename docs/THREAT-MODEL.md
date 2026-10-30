@@ -38,6 +38,7 @@ An outsider who **can't talk to the agent** but can put text where it reads: an 
 - **Truncating the end of the audit log**: the chain detects edits and deletions in the middle; for the end, record the head hash shown in the Audit tab.
 - **Host or key compromise**, and threats outside this track (code-execution sandbox escape).
 - **Replay mode** replays a recorded agent plan; the gate decisions are computed live every time.
+- **MCP gateway: tools the client reaches some other way.** The gateway (`integrations/mcp_gateway/`) protects only the tools it serves; a client with its own filesystem or email server can use those unchecked. And the intent is what the client reports in `start_task`: the lock stops it changing mid-session, not a client that lies from the start.
 
 ## 6. Prior work (credit it)
 CaMeL (Google DeepMind), FIDES (Microsoft), PACT and ARGUS (argument-level provenance), MELON, Task Shield, agent-canary. What's ours: see docs/PITCH.md "What's new".

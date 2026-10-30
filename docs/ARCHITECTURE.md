@@ -10,8 +10,12 @@ flowchart LR
   TOOLS -- "output labelled untrusted" --> GATE
   GATE --> DB[("SQLite: sessions, decisions,<br/>world_events, audit_log (hash chain), eval_runs")]
   EXT["Any other agent framework"] -- "POST /v1/decide" --> GATE
+  MCPC["MCP client<br/>Claude Desktop · Cursor · Inspector"] -- "stdio / HTTP" --> GW["MCP gateway<br/>(integrations/mcp_gateway)"]
+  GW -- "POST /v1/decide" --> GATE
 ```
 The agent never touches a tool directly. There is no path from the agent to a tool except `gate/handle.py`.
+
+**MCP gateway** (`integrations/mcp_gateway/server.py`, outside `backend/app`): an MCP server that exposes the same tools as `TOOLS` plus `start_task`. `start_task` locks the user's request once; every later call is validated, then sent to `POST /v1/decide` with the request and all earlier tool outputs of the session as labelled context (one item per email). Only ALLOW runs the tool on the gateway's own simulated World; DENY and REQUIRE_APPROVAL come back as MCP tool errors, and any backend failure fails closed. The backend audits each call as `v1_decide`. Details: `integrations/mcp_gateway/README.md`.
 
 ## 2. One request, step by step
 1. `POST /sessions` → `sessions.create_session()` builds the world, the **segment store** (user text = USER, vendor registry = TRUSTED, vault canaries = hidden SECRET) and the **intent capsule** from the user's words only (`gate/capsule.py`).

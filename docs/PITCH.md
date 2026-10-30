@@ -14,7 +14,7 @@ Numbers only from RESULTS.md. Facts only from FACTS.md. Replay mode on stage (sa
 | 2:45–3:00 | M4 | Closing slide | "Don't secure the prompt. Check the passport of every argument. Any framework can call `/v1/decide` before running a tool." |
 
 ## What's new (say it honestly)
-"Checking where data came from is known research: CaMeL, FIDES, PACT. We credit them. Ours decides **per argument**, so the legit part of the task keeps working; it **shows the user the exact line** a bad value came from; it runs as a **drop-in API**; and [v2 pieces built: UPI mandate lock for agentic payments in India · disguise-proof tracing in Hindi/Kannada/base64 · herd immunity across agents · argument-bound payment visas]."
+"Checking where data came from is known research: CaMeL, FIDES, PACT. We credit them. Ours decides **per argument**, so the legit part of the task keeps working; it **shows the user the exact line** a bad value came from; it runs as a **drop-in API**; and [v2 pieces built: UPI mandate lock for agentic payments in India · disguise-proof tracing in Hindi/Kannada/base64 · herd immunity across agents · an MCP gateway so Claude Desktop, Cursor and VS Code get the same checks]."
 
 ## Judge Q&A
 | Question | Answer | Who |
@@ -24,6 +24,7 @@ Numbers only from RESULTS.md. Facts only from FACTS.md. Replay mode on stage (sa
 | What if the attacker rewords or translates? | The verdict never reads the wording: the address still exists only in the email (s7a Hindi is denied). Disguised addresses ("at"/"dot", base64, Kannada digits, invisible characters) are traced back and denied too (s7b–s7e); disguises we don't decode go to approval, never allowed. | M2 |
 | Isn't the agent scripted? | In replay mode the agent's plan is recorded so the demo is reproducible; every gate decision is computed live. Live LLM mode uses <provider/model>. | M1 |
 | False positives? | 0 popups on clean legit tasks, 6/6 legit tasks completed with the shield on (RESULTS.md). | M2 |
+| Does it work with real agents? | Yes: the MCP gateway puts PASSPORT in front of any MCP client, like Claude Desktop, Cursor or VS Code, with no change to the client or the model. In s2 the model obeys the hidden email and PASSPORT refuses the send, quoting line 13 of email #3. It protects only the tools that go through the gateway, and the intent is what the client reports. | M1 |
 | What if the user types the attacker's address? | Then it's the user's intent; out of scope, and in our threat model. | M4 |
 | Where's LangChain? | We didn't need it: the gate is framework-agnostic. Any LangChain/LangGraph/CrewAI agent calls `POST /v1/decide` before a tool. | M1 |
 | Is the data real? | No: synthetic company, `.test` domains, random canary keys, tools act in memory only. | M4 |

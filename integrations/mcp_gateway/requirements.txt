@@ -1,0 +1,4 @@
+# PASSPORT MCP gateway only; kept out of backend/requirements.txt. Install into backend/.venv
+# (the gateway imports the backend's World and tool catalogue read-only).
+mcp==2.3.0
+httpx==0.28.1

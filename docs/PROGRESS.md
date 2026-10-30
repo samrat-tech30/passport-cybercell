@@ -6,6 +6,11 @@
 **Live URLs:** frontend <…> · backend <…>
 **Next task:** merge V1-4; teammates pull main. Live demo: S1 live, S2 OFF in replay, S2 ON live or replay.
 
+## Done (V2-E MCP gateway, Person B, feat/gateway-mcp)
+- `integrations/mcp_gateway/server.py` on `mcp` 2.3.0: TOOLS + `start_task` intent lock; every call → `/v1/decide` with session context (one item per email); DENY/approval/backend failure → MCP tool error, fail closed; stdio + `--http`
+- 15 tests (`make mcp-test`, ~1 s, in-memory + ASGI); `demo_client.py` ran s2 over real stdio against the live backend: read ALLOW, evil send DENY R3 "email #3 … line 13", Priya send ALLOW; backend down → "PASSPORT unreachable"; calls in the audit log
+- Claude Desktop (Windows Store install) by hand: start_task, read ALLOW, Priya send ALLOW, in the audit log; Claude refused the injection itself, so the DENY is shown with demo_client.py. MCP Inspector not run.
+
 ## Done (V1-4 live LLM, Person B, feat/live-llm)
 - Groq openai/gpt-oss-120b live: S1 5/5; S2 shield OFF leaks 2/9 (reads the secret 9/9) → attack demo stays in replay (DECISIONS.md); shield ON blocks read_secret live
 - `scripts/llm_probe.py`, `scripts/live_trials.py --pause 25`; RECORD_FIXTURES + `script_file:`; one real recording in app/fixtures/
