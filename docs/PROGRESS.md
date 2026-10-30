@@ -6,8 +6,13 @@
 **Live URLs:** frontend <…> · backend <…>
 **Next task:** projector check of V1-3 polish on the venue screen, then merge feat/ui-polish; merge V1-4; teammates pull main. Live demo: S1 live, S2 OFF in replay, S2 ON live or replay.
 
+## Done (UI round 3: Sky Ink, feat/sky-ink, branched from feat/ui-polish)
+- Every screen rebuilt to Sky Ink (docs/DESIGN.md): two-layer tokens, Newsreader headlines, sky hero holding the request + frozen intent + Run, route strip, cards without side borders and with ruled values, origin treatments (yellow highlighter = outside content, black bar = secret), outcome rail, document-style evidence, approval with Reject focused, editorial Scoreboard/Audit, illustrated idle/offline/empty states; dark theme removed
+- Checked in Chromium at 1440×900, 1280×720 and 360 wide (no horizontal scroll), S2 on/off, S5 approval + Esc, evidence, scoreboard eval, audit, offline, keyboard order, contrast of every token pair; design/mockups replaced with these screenshots
+- Not yet: the real venue projector; merge into main needs the owner's OK
+
 ## Done (V1-3 polish, Person B, feat/ui-polish)
-- Look: self-hosted Geist/Geist Mono, warm graphite tokens, CSS-only motion (card enter, stamp spring, dialogs, tab plate, count-up), WebGPU guilloché seal in idle state (2D fallback; Chrome on the Core Ultra laptop uses WebGPU)
+- (Look superseded by Sky Ink above) Look: self-hosted Geist/Geist Mono, warm graphite tokens, CSS-only motion (card enter, stamp spring, dialogs, tab plate, count-up), WebGPU guilloché seal in idle state (2D fallback; Chrome on the Core Ultra laptop uses WebGPU)
 - Projector 1280×720: left column collapses to a one-line strip; topbar fits one row; step 3 of S2 starts above the fold
 - States: backend-down banner + Retry (controls disabled), session error card + Run again, attacker panel says "Nothing received" only after a finished run, run-finished counts, rejected approvals stamped REJECTED + "Agent claimed:"
 - Cards: values clamp with "Show full value", sink args loud / subject+body quiet, evidence button pinned right; origin legend; scoreboard sentence from API numbers
