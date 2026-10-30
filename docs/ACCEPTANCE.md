@@ -45,10 +45,10 @@ Slices marked ✅ were delivered by the starter and verified on 2026-10-30 (85 b
 - [x] [auto] `make eval` unchanged (attacks 9/9 → 0/9, legit 7/7 → 7/7, 0 popups)
 - [ ] [hand] red-teamer run on the gateway routes, findings fixed before merging
 ### G2 Fake upstream + gateway + fooled agent (Person B)
-- [ ] [hand] `fooled_agent.py` runs end to end against the stub, then the real backend
-- [ ] [auto] the gateway's stdout carries only MCP protocol traffic
-- [ ] [auto] `nimbus_mcp` refuses to start without `NIMBUS_GATEWAY_KEY`
-- [ ] [auto] `make check` green
+- [x] [hand] `fooled_agent.py` runs end to end against the real backend (no stub needed: G1 landed first)
+- [x] [auto] the gateway's stdout carries only MCP protocol traffic (start-up test + live stdio run)
+- [x] [auto] `nimbus_mcp` refuses to start without `NIMBUS_GATEWAY_KEY`
+- [x] [auto] `make check` green
 ### G3 "Gateway" tab in the dashboard (Person A)
 - [ ] [hand] Gateway tab: connected agents (poll 3 s, empty state with commands), live decisions of the selected session, approval center with countdown and the timed-out message; Agent, Scoreboard and Audit tabs unchanged
 - [ ] [hand] screenshot loop (desktop + `--projector`) with a `make fooled-agent` session, then ui-critic

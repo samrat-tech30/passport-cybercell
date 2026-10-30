@@ -24,3 +24,7 @@ jobs:
           cd ../frontend && npm ci --no-audit --no-fund
       - name: Check
         run: bash scripts/check.sh
+      - name: Gateway tests (integrations/, needs the mcp SDK)
+        run: |
+          backend/.venv/bin/pip install -q -r integrations/requirements.txt
+          cd integrations && ../backend/.venv/bin/python -m pytest tests -q

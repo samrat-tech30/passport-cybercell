@@ -38,7 +38,7 @@ An outsider who **can't talk to the agent** but can put text where it reads: an 
 - **Truncating the end of the audit log**: the chain detects edits and deletions in the middle; for the end, record the head hash shown in the Audit tab.
 - **Host or key compromise**, and threats outside this track (code-execution sandbox escape).
 - **Replay mode** replays a recorded agent plan; the gate decisions are computed live every time.
-- **MCP gateway: tools the client reaches some other way.** The gateway (`integrations/mcp_gateway/`) protects only the tools it serves; a client with its own filesystem or email server can use those unchecked. And the intent is what the client reports in `start_task`: the lock stops it changing mid-session, not a client that lies from the start.
+- **MCP gateway: tools the client reaches some other way.** The gateway (`integrations/passport_gateway/`) protects only the tools it serves; a client with its own filesystem or email server can use those unchecked. And the intent is what the client reports in `start_task`: the lock stops it changing mid-session, not a client that lies from the start.
 - **Gateway mode** (outside agents through the MCP gateway) protects only what goes through the gateway:
   - **Tools the agent reaches some other way.** If the user also configures the raw upstream server (or any other MCP server) in the client, those calls never reach PASSPORT.
   - **Content the agent saw outside PASSPORT** (text pasted into the chat, a file the client read itself). It isn't a segment, so a value from it traces as model-invented (R5, ask), not untrusted.

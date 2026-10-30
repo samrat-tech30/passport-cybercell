@@ -1,3 +1,5 @@
+> **Superseded (2026-10-31, 04:15).** This briefing describes the V2-E design (`integrations/mcp_gateway`). The current gateway is `integrations/passport_gateway` + `integrations/nimbus_mcp` + backend `/v1/gateway/*` (see `prompts/GATEWAY-PROMPTS.md`, `docs/ARCHITECTURE.md` §8). Kept for history.
+
 # PASSPORT: project structure and the MCP gateway
 
 Team briefing · branch `feat/gateway-mcp` · written 2026-10-31

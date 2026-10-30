@@ -3,7 +3,7 @@ PY ?= python3
 VENV = backend/.venv
 BIN = $(VENV)/bin
 
-.PHONY: setup backend frontend test lint eval check examples tamper reset-db mcp-gateway mcp-test
+.PHONY: setup backend frontend test lint eval check examples tamper reset-db gateway gateway-test fooled-agent
 
 setup:            ## create the backend venv and install both halves
 	cd backend && $(PY) -m venv .venv && .venv/bin/pip install -q -r requirements-dev.txt
@@ -38,8 +38,11 @@ tamper:           ## DEMO: flip one DENY to ALLOW in the audit log, then press V
 reset-db:         ## delete the local demo database (audit log too!)
 	rm -f backend/var/passport.db backend/var/passport.db-wal backend/var/passport.db-shm
 
-mcp-gateway:      ## MCP gateway over stdio (needs the backend running; see integrations/mcp_gateway/README.md)
-	$(BIN)/python integrations/mcp_gateway/server.py
+gateway:          ## PASSPORT MCP gateway over stdio (backend running with PASSPORT_GATEWAY_TOKEN; same token in this shell)
+	$(BIN)/python integrations/passport_gateway/server.py
 
-mcp-test:         ## MCP gateway tests (in-memory, no network)
-	cd integrations/mcp_gateway && ../../$(BIN)/python -m pytest tests -q
+fooled-agent:     ## DEMO: scripted agent fooled by email #3, through the gateway (SHIELD=off for monitor mode)
+	$(BIN)/python integrations/demo_agent/fooled_agent.py --shield $(or $(SHIELD),on)
+
+gateway-test:     ## gateway + Nimbus + backend in one process (in-memory MCP, ASGI backend)
+	cd integrations && ../$(BIN)/python -m pytest tests -q
