@@ -16,7 +16,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from app.api.schemas import GatewayDecideIn, GatewaySessionIn, IntentIn, ObserveIn
+from app.api.schemas import CatalogIn, GatewayDecideIn, GatewaySessionIn, IntentIn, ObserveIn
 from app.config import get_settings
 from app.contracts import Decision, Reason, Trust, Verdict
 from app.db import repo
@@ -86,6 +86,7 @@ async def intent(session_id: str, body: IntentIn) -> dict[str, Any]:
     s.user_request = request
     # Nothing has entered the store yet (decide is refused before the intent), so rebuild it.
     s.gate.store = new_store(request, s.world)
+    _add_catalog_segments(s)  # the rebuild must not forget the installed tools' descriptions
     s.gate.capsule = build_capsule(request)
     repo.set_session_request(s.id, request)
     repo.set_session_capsule(s.id, s.gate.capsule.model_dump())
@@ -107,8 +108,18 @@ async def intent(session_id: str, body: IntentIn) -> dict[str, Any]:
     return {"capsule": s.gate.capsule.model_dump()}
 
 
-def _r0(s: Session, tool: str, step: int) -> Decision:
-    message = "The gate hit an error, so the call was blocked to be safe."
+LOCKED_MESSAGE = (
+    "The installed server changed its tool definitions after install (possible rug pull), "
+    "so every call in this session is blocked."
+)
+
+
+def _r0(
+    s: Session,
+    tool: str,
+    step: int,
+    message: str = "The gate hit an error, so the call was blocked to be safe.",
+) -> Decision:
     risk = s.gate.policy.risk.get("R0_FAIL_CLOSED", 100)
     return Decision(
         session_id=s.id,
@@ -143,7 +154,12 @@ async def gateway_decide(session_id: str, body: GatewayDecideIn) -> dict[str, An
         raise _err(409, "intent_required", "Call start_task with the user's request first.")
     step = len(s.decisions) + 1
     try:
-        d, run, clean = await _decide_and_wait(s, body.tool, body.args, step)
+        if s.gateway_locked:
+            d, run, clean = _r0(s, body.tool, step, LOCKED_MESSAGE), False, None
+            s.decisions[d.id] = d
+            await s.emit("decision", d.model_dump(mode="json"))
+        else:
+            d, run, clean = await _decide_and_wait(s, body.tool, body.args, step)
     except Exception:  # noqa: BLE001 - fail closed: never a 500 a caller could misread
         log.exception("gateway decide failed in session %s", s.id)
         d, run, clean = _r0(s, body.tool, step), False, None
@@ -213,6 +229,53 @@ async def _decide_and_wait(
         except InvalidArgs:
             clean = None  # only reachable in monitor mode (the gate already DENYs invalid args)
     return d, run, clean
+
+
+def catalog_sha(tools: list[dict[str, Any]]) -> str:
+    canonical = json.dumps(tools, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(canonical.encode()).hexdigest()
+
+
+@router.post("/sessions/{session_id}/catalog", dependencies=[Depends(require_gateway_token)])
+async def catalog(session_id: str, body: CatalogIn) -> dict[str, Any]:
+    """The installed server's tools. Their descriptions are untrusted content (tool poisoning); the
+    first catalog is pinned, and a different one later (a rug pull) locks the session."""
+    s = _session(session_id)
+    tools = [t.model_dump() for t in body.tools]
+    sha = catalog_sha(tools)
+    if s.gateway_catalog_sha is None:
+        s.gateway_catalog = {"server": body.server, "tools": tools}
+        s.gateway_catalog_sha = sha
+        _add_catalog_segments(s)
+        s.audit(
+            "gateway_catalog", {"server": body.server, "tools": [t["name"] for t in tools], "sha256": sha}
+        )
+        return {"sha256": sha, "tools": len(tools)}
+    if sha == s.gateway_catalog_sha:
+        return {"sha256": sha, "tools": len(tools)}
+    s.gateway_locked = True
+    s.audit(
+        "gateway_catalog_changed",
+        {"server": body.server, "pinned_sha256": s.gateway_catalog_sha, "new_sha256": sha},
+    )
+    raise _err(409, "catalog_changed", LOCKED_MESSAGE)
+
+
+def _add_catalog_segments(s: Session) -> None:
+    if not s.gateway_catalog:
+        return
+    server = s.gateway_catalog["server"]
+    for t in s.gateway_catalog["tools"]:
+        lines = [t["description"]]
+        props = t["input_schema"].get("properties") if isinstance(t["input_schema"], dict) else None
+        if isinstance(props, dict):
+            for pname, spec in props.items():
+                desc = spec.get("description", "") if isinstance(spec, dict) else ""
+                lines.append(f"{pname}: {desc}")
+        text = "\n".join(str(x) for x in lines)
+        s.gate.store.add(
+            f"tool:{t['name']}", f"Tool description: {t['name']} (server {server})", Trust.UNTRUSTED, text
+        )
 
 
 @router.post("/sessions/{session_id}/observe", dependencies=[Depends(require_gateway_token)])

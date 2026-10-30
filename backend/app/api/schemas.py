@@ -42,6 +42,17 @@ class ObserveIn(Strict):
     output: str = Field(max_length=20_000)
 
 
+class CatalogTool(Strict):
+    name: str = Field(min_length=1, max_length=64)
+    description: str = Field(default="", max_length=4000)
+    input_schema: dict[str, Any] = Field(default_factory=dict)
+
+
+class CatalogIn(Strict):
+    server: str = Field(min_length=1, max_length=60)
+    tools: list[CatalogTool] = Field(max_length=50)
+
+
 class ContextItem(Strict):
     source: str = Field(min_length=1, max_length=200)
     trust: Literal["trusted", "untrusted", "secret"]

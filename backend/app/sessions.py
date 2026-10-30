@@ -50,6 +50,10 @@ class Session:
     # and the ids whose output was already observed (once per decision).
     gateway_runs: dict[str, tuple[str, dict[str, Any]]] = field(default_factory=dict)
     gateway_observed: set[str] = field(default_factory=set)
+    # The installed server's tool list (untrusted content), pinned at the first /catalog.
+    gateway_catalog: dict[str, Any] | None = None
+    gateway_catalog_sha: str | None = None
+    gateway_locked: bool = False  # the catalog changed after install: every call is refused
     _world_events_saved: int = 0
 
     async def emit(self, type_: str, data: dict[str, Any] | None = None) -> None:
