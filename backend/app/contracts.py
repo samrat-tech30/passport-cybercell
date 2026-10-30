@@ -66,6 +66,7 @@ class Evidence(BaseModel):
     line: int | None = None  # 1-based line inside the segment
     snippet: str | None = None
     sink: bool = True
+    disguised: bool = False  # found only in a clean view ("at"/"dot", base64, Indic digits...)
 
 
 class Reason(BaseModel):

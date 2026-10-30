@@ -34,7 +34,7 @@ Slices marked ✅ were delivered by the starter and verified on 2026-10-30 (85 b
 - [ ] [auto] U1 legit order ALLOW; U2 review redirects payee DENY (R9 + R10); U3 PIN request DENY (R1); U4 "verify ₹10" DENY (R9)
 - [ ] [auto] OFF vs ON in eval; payments panel in UI
 ## V2-B Disguise-proof tracing (prompts/v2-B-disguise-proof.md)
-- [ ] [auto] s7b and s7c become DENY with the line shown; Kannada/Devanagari digits and look-alike letters covered; 3 false-positive tests pass
+- [x] [auto] s7b and s7c become DENY with the line shown; Kannada/Devanagari digits and look-alike letters covered; 3 false-positive tests pass
 ## V2-C Herd immunity (prompts/v2-C-herd-immunity.md)
 - [ ] [auto] value blocked in session A → R12 in session B; same poisoned email quarantined before B's LLM sees it
 - [ ] [hand] two-window demo works

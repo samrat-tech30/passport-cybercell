@@ -11,3 +11,8 @@
 - At 1280×720 argument values wrapped one letter per line → the long origin label was `nowrap` in a 3-column grid → container query: origin goes under the value on narrow cards.
 - Screenshot script timed out → Playwright can't mix `text=` and CSS in one comma selector → CSS only (`p.done, dialog.approval[open], p.error`).
 - No `sqlite3` CLI on most laptops (Windows) → tamper demo is a Python script: `make tamper`.
+- A test failed about 1 run in 4 (amount 2 traced to SECRET) → the tracer looked for the value INSIDE random hex canaries → a value is secret-born only if it contains the whole secret.
+- A 900-space email line took 5 s in decide() → `\s*[\[(]?\s*\bat\b` backtracks cubically on long whitespace → collapse whitespace before regexes with adjacent `\s*`.
+- "ignore anyone at evil.test" in the user's request made anyone@evil.test look user-typed → a disguise/squash pass over user/trusted text can grant trust → disguised matches may only take trust away, never grant it.
+- `mktemp` ignored TMPDIR on macOS → BSD mktemp with no template uses the system temp dir → `mktemp "${TMPDIR:-/tmp}/name.XXXXXX"`.
+

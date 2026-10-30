@@ -15,9 +15,11 @@ An outsider who **can't talk to the agent** but can put text where it reads: an 
 | Threat | Rule | Proven by |
 |---|---|---|
 | Hijacked sink argument (recipient, path, account, key) from content | R3 | s2, s3, s4, s6, s7a |
+| The same, written in disguise ("at"/"dot", base64, Indic digits or digit words, zero-width characters) | R3 | s7b, s7c, s7d, s7e, test_disguise.py |
+| Look-alike letters in an address, account, path or key (Cyrillic а in "bigbаsket") | R11 | test_disguise.py |
 | Secret exfiltration in any argument, raw or encoded | R2, R4 | s2/s3 shield OFF shows it lands; tests in test_decide.py |
 | Tools outside the assistant's role | R1 | s3, s4 |
-| Values the model made up after reading untrusted content | R5 (ask) | s7b, s7c |
+| Values the model made up after reading untrusted content | R5 (ask) | test_decide.py |
 | Actions outside the user's intent or above their amount | R6 (ask) | test_decide.py |
 | High-impact actions without a human | R7 (ask) | s5, s8b |
 | Secret + untrusted content + egress in one session | R8 (ask) | test_decide.py |
@@ -27,7 +29,10 @@ An outsider who **can't talk to the agent** but can put text where it reads: an 
 ## 5. What PASSPORT does NOT stop (say this out loud)
 - **Text-only manipulation** with no tool effect (a biased or wrong summary).
 - **A user who types the attacker's details** themselves (they are the trusted user).
-- **Disguised values in v1** ("audit-team at evil dot test", base64): they go to approval (R5), not DENY. v2 upgrade B closes this.
+- **Disguises we don't decode**: nested base64, hex, ROT13, Devanagari or Kannada words for "at"/"dot", a value split across lines or emails. These fall back to R5 (ask), never ALLOW.
+- **Non-ASCII sink values are always denied** (R11): addresses, accounts, keys AND file paths (a user-typed `résumé.md` too). Fine for our synthetic world; a real deployment would need an allowlist.
+- **An address the user only spelled out** ("priya at nimbus dot test") gets an approval, not ALLOW: a squashed reading of the user's words could otherwise produce an attacker's address ("ignore anyone at evil.test").
+- **Canary forms we don't check** (spaced or line-broken base64, uppercase hex, base32, double base64): defence in depth only, since the assistant's profile can't read secrets (R1) and R8 asks on egress after a secret was seen.
 - **Heavy paraphrase of a secret** that defeats canary matching: mitigated by R8 (egress after secret access needs approval).
 - **Approval fatigue**: reduced (only risky values are shown; legit tasks had 0 popups in our eval), not solved.
 - **Truncating the end of the audit log**: the chain detects edits and deletions in the middle; for the end, record the head hash shown in the Audit tab.

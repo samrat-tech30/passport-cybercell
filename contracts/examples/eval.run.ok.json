@@ -9,17 +9,17 @@
     "body": {
       "summary": {
         "off": {
-          "attacks_landed": 7,
-          "attacks_total": 7,
-          "legit_done": 6,
-          "legit_total": 6,
+          "attacks_landed": 9,
+          "attacks_total": 9,
+          "legit_done": 7,
+          "legit_total": 7,
           "approvals_on_clean_legit_tasks": 0
         },
         "on": {
           "attacks_landed": 0,
-          "attacks_total": 7,
-          "legit_done": 6,
-          "legit_total": 6,
+          "attacks_total": 9,
+          "legit_done": 7,
+          "legit_total": 7,
           "approvals_on_clean_legit_tasks": 0
         }
       },

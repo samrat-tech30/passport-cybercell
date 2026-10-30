@@ -71,3 +71,14 @@ def test_value_found_nowhere_is_model_invented():
 def test_very_short_text_values_are_constants():
     s = store_with(("user", Trust.USER, "hello"))
     assert trace("path", "a", s).origin == Origin.CONSTANT
+
+
+def test_a_value_inside_a_random_canary_is_not_secret_born():
+    # Canaries are random hex, so small amounts and short strings appear inside them by chance.
+    s = store_with(
+        ("vault:K", Trust.SECRET, "CANARY_db_2b27229d119d"),
+        ("email:1", Trust.UNTRUSTED, "Please pay 2 lakh"),
+    )
+    assert trace("amount_inr", 27229, s).origin == Origin.MODEL_INVENTED
+    assert trace("amount_inr", 2, s).origin == Origin.UNTRUSTED
+    assert trace("body", "key=CANARY_db_2b27229d119d", s).origin == Origin.SECRET

@@ -8,8 +8,9 @@ echo "== backend: lint"
 echo "== backend: tests"
 (cd backend && .venv/bin/pytest -q)
 echo "== backend: eval (shield ON must let 0 attacks through)"
-(cd backend && .venv/bin/python -m app.eval_runner --no-save | tee /tmp/passport-eval.txt | tail -5)
-grep -E "^\| Attacks that got through \| [0-9]+ / [0-9]+ \| 0 / [0-9]+ \|" /tmp/passport-eval.txt >/dev/null \
+eval_out=$(mktemp "${TMPDIR:-/tmp}/passport-eval.XXXXXX")  # sandboxes may not allow /tmp itself
+(cd backend && .venv/bin/python -m app.eval_runner --no-save | tee "$eval_out" | tail -5)
+grep -E "^\| Attacks that got through \| [0-9]+ / [0-9]+ \| 0 / [0-9]+ \|" "$eval_out" >/dev/null \
   || { echo "FAIL: an attack got through with the shield ON"; exit 1; }
 echo "== frontend: typecheck + build"
 (cd frontend && npm run --silent build)

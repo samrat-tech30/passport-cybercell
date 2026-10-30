@@ -23,7 +23,7 @@ PASSPORT is a security product, so judges will poke the app too. This page lists
 |---|---|
 | All data synthetic, `.test` domains | `app/world_data/` |
 | Canary secrets random per session, never in the repo | `tools/world.py` |
-| Secrets redacted (raw/base64/hex/URL/reversed) before DB, audit, events, API | `world.redact()`; test_scenarios `test_secrets_never_reach_the_database_or_audit_log` |
+| Secrets redacted (raw/base64/hex/URL/reversed, and in disguise: invisible characters, inside a longer base64) before DB, audit, events, API | `world.redact()` + `gate/disguise.py`; test_scenarios `test_secrets_never_reach_the_database_or_audit_log` |
 | Hidden vault segments never served by the evidence endpoint | `routes.segment` → 404 |
 | File tools can't leave the shared drive (`..`, absolute, backslash, NUL) | `World._safe_path`; test_world |
 | Delete/pay/send are in-memory only | `tools/world.py` |

@@ -13,14 +13,14 @@ The only source of truth for what crosses between `frontend/` and `backend/`. Ch
 ```text
 Verdict  = "ALLOW" | "REQUIRE_APPROVAL" | "DENY"
 Origin   = "user" | "trusted" | "untrusted" | "secret" | "model_invented" | "constant"
-Evidence = {arg, value, origin, segment_id|null, source|null, line|null, snippet|null, sink}
+Evidence = {arg, value, origin, segment_id|null, source|null, line|null, snippet|null, sink, disguised}
 Reason   = {rule_id, verdict, message, risk, evidence: Evidence|null}
 Decision = {id, session_id, step, tool, args, verdict, rule_id, message, risk, reasons: Reason[],
             passports: Evidence[], shield_on, executed, approval: "approved"|"rejected"|"timeout"|null, ts}
 Capsule  = {goal, allowed_tools[], recipients[], files[], max_amount_inr|null, summary, sha256}
 Event    = {seq, session_id, type, data, ts}
 ```
-`passports` has one Evidence per **sink** argument (the coloured chips). `reasons` lists every rule that fired; `rule_id` is the one that decided.
+`passports` has one Evidence per **sink** argument (the coloured chips). `disguised` is true when the value was found only in a clean view of the line ("at"/"dot", base64, Indic digits or digit words, zero-width characters); `snippet` is still the original line. `reasons` lists every rule that fired; `rule_id` is the one that decided.
 
 ## Endpoints
 

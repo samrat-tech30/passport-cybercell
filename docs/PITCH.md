@@ -21,7 +21,7 @@ Numbers only from RESULTS.md. Facts only from FACTS.md. Replay mode on stage (sa
 |---|---|---|
 | Why not a guard LLM? | It can be injected too. Our decision is deterministic code over where values came from; the LLM is allowed to be fooled, it just can't act on it. | M2 |
 | Isn't this CaMeL / FIDES? | Same principle, credited. They block whole flows once untrusted data is in scope; we decide per argument, show evidence lines, and drop in over HTTP. | M2 |
-| What if the attacker rewords or translates? | The verdict never reads the wording: the address still exists only in the email (s7a Hindi is denied). Disguised addresses go to approval in v1 (s7b/c) and are denied in v2. | M2 |
+| What if the attacker rewords or translates? | The verdict never reads the wording: the address still exists only in the email (s7a Hindi is denied). Disguised addresses ("at"/"dot", base64, Kannada digits, invisible characters) are traced back and denied too (s7b–s7e); disguises we don't decode go to approval, never allowed. | M2 |
 | Isn't the agent scripted? | In replay mode the agent's plan is recorded so the demo is reproducible; every gate decision is computed live. Live LLM mode uses <provider/model>. | M1 |
 | False positives? | 0 popups on clean legit tasks, 6/6 legit tasks completed with the shield on (RESULTS.md). | M2 |
 | What if the user types the attacker's address? | Then it's the user's intent; out of scope, and in our threat model. | M4 |

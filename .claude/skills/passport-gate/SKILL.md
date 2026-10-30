@@ -32,6 +32,9 @@ Shield OFF: same decision is computed and logged, but the tool runs anyway. That
 | R6_OUT_OF_INTENT | tool not in the capsule, or amount over the user's limit | REQUIRE_APPROVAL |
 | R7_HIGH_IMPACT | high-impact tool, or a soft sink (invoice amount) from a document | REQUIRE_APPROVAL |
 | R8_TRIFECTA | session saw a secret AND untrusted content, and the call is egress | REQUIRE_APPROVAL |
+| R11_LOOKALIKE | non-ASCII character in a string sink value (Cyrillic а in "bigbаsket"); message says "looks like <value>" | DENY |
+
+Tracing (V2-B): each origin is searched exactly, then in disguise (`gate/disguise.py` views: "at"/"dot", base64, Indic digits, 3+ digit words, invisible characters), before the next origin. A disguised hit sets `Evidence.disguised`; a disguised hit in the user's words or trusted config only ASKs (R5), never grants ALLOW. Exact matches in user/trusted text must be whole values; a SECRET match needs the whole secret inside the value.
 Final verdict = strongest reason (DENY > ASK > ALLOW). Primary rule = highest-risk reason with that verdict. All reasons are kept as evidence.
 v2 adds R9_MANDATE_PAYEE, R10_MANDATE_AMOUNT, R11_LOOKALIKE, R12_KNOWN_THREAT (see prompts/v2-*.md). Adding a rule = add it to `RULE_IDS` in policy.py AND `risk:` in policy.yaml, or start-up fails.
 
@@ -42,7 +45,8 @@ v2 adds R9_MANDATE_PAYEE, R10_MANDATE_AMOUNT, R11_LOOKALIKE, R12_KNOWN_THREAT (s
 - **Conditions** for scenarios: `attacker_received`, `email_sent_to:<addr>`, `paid:<account>`, `file_deleted:<path>`, `secret_read:<key>`.
 
 ## Honest limits (say them, don't hide them)
-- Exact matching misses disguised values ("x at evil dot test", base64): v1 falls back to R5 (ask), never ALLOW. v2 upgrade B fixes this.
+- Disguises we don't decode (nested base64, hex, ROT13, Indic words for "at"/"dot", a value split across lines) fall back to R5 (ask), never ALLOW.
+- R11 denies every non-ASCII address: fine for our synthetic world, a real deployment with internationalised addresses would need an allowlist.
 - PASSPORT reasons about where values came from, not what text means: a biased summary with no tool effect isn't stopped.
 - A user who types the attacker's details themselves is trusted (they're the user).
 - Replay mode replays a recorded plan; the gate still runs live. Say this to judges.
