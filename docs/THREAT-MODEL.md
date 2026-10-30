@@ -38,6 +38,10 @@ An outsider who **can't talk to the agent** but can put text where it reads: an 
 - **Truncating the end of the audit log**: the chain detects edits and deletions in the middle; for the end, record the head hash shown in the Audit tab.
 - **Host or key compromise**, and threats outside this track (code-execution sandbox escape).
 - **Replay mode** replays a recorded agent plan; the gate decisions are computed live every time.
+- **Gateway mode** (outside agents through the MCP gateway) protects only what goes through the gateway:
+  - **Tools the agent reaches some other way.** If the user also configures the raw upstream server (or any other MCP server) in the client, those calls never reach PASSPORT.
+  - **Content the agent saw outside PASSPORT** (text pasted into the chat, a file the client read itself). It isn't a segment, so a value from it traces as model-invented (R5, ask), not untrusted.
+  - **The intent is the request as the client reports it** through `start_task`. A client that reports the wrong request gets the wrong capsule. The lock only stops a *later* call from rewriting it.
 
 ## 6. Prior work (credit it)
 CaMeL (Google DeepMind), FIDES (Microsoft), PACT and ARGUS (argument-level provenance), MELON, Task Shield, agent-canary. What's ours: see docs/PITCH.md "What's new".
