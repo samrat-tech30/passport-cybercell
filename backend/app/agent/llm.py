@@ -7,8 +7,12 @@
 
 from __future__ import annotations
 
+import asyncio
+import base64
 import json
 import re
+import urllib.parse
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Protocol
 
@@ -17,7 +21,21 @@ from app.config import Settings
 if TYPE_CHECKING:
     from app.sessions import Session
 
-_SECRET_TMPL = re.compile(r"\{\{secret:([A-Z0-9_]+)\}\}")
+# {{secret:NAME}} or {{secret:NAME:b64}}: same encodings as World.secret_forms(), so a recorded
+# live run that leaked a base64 secret replays as the same base64 leak.
+_SECRET_TMPL = re.compile(r"\{\{secret:([A-Z0-9_]+)(?::([a-z0-9]+))?\}\}")
+SECRET_ENCODINGS: dict[str, Callable[[str], str]] = {
+    "raw": lambda v: v,
+    "b64": lambda v: base64.b64encode(v.encode()).decode(),
+    "b64url": lambda v: base64.urlsafe_b64encode(v.encode()).decode(),
+    "hex": lambda v: v.encode().hex(),
+    "url": lambda v: urllib.parse.quote(v, safe=""),
+    "rev": lambda v: v[::-1],
+}
+
+
+class LLMError(RuntimeError):
+    """A live-LLM failure whose message is safe to show in the UI (no key, no stack trace)."""
 
 
 @dataclass
@@ -49,8 +67,10 @@ class ReplayLLM:
         if isinstance(value, str):
 
             def sub(m: re.Match) -> str:
-                name = m.group(1)
-                return session.world.vault[name] if name in session.gate.store.revealed else "[unknown]"
+                name, enc = m.group(1), m.group(2) or "raw"
+                if name not in session.gate.store.revealed or enc not in SECRET_ENCODINGS:
+                    return "[unknown]"
+                return SECRET_ENCODINGS[enc](session.world.vault[name])
 
             return _SECRET_TMPL.sub(sub, value)
         if isinstance(value, dict):
@@ -102,20 +122,52 @@ def assistant_message(turn: LLMTurn) -> dict[str, Any]:
     return msg
 
 
-class OpenAICompatLLM:
-    def __init__(self, settings: Settings) -> None:
-        from openai import AsyncOpenAI  # imported lazily: replay mode never needs it
+def _retry_after_s(err: Any, cap: float = 5.0) -> float:
+    try:
+        return min(max(float(err.response.headers.get("retry-after", "2")), 0.0), cap)
+    except (AttributeError, TypeError, ValueError):
+        return 2.0
 
+
+class OpenAICompatLLM:
+    """Retries are ours, not the SDK's: a 429 gets exactly one retry, a timeout none (a retried
+    timeout doubles the wait on stage). Every failure becomes an LLMError with a readable message."""
+
+    def __init__(self, settings: Settings, client: Any = None) -> None:
         self.model = settings.llm_model
-        self.client = AsyncOpenAI(
-            base_url=settings.llm_base_url,
-            api_key=settings.llm_api_key,
-            timeout=settings.llm_timeout_s,
-            max_retries=1,
-        )
+        self.timeout_s = settings.llm_timeout_s
+        self.hard_timeout_s: float = settings.llm_timeout_s + 5  # backstop if the client itself hangs
+        if client is None:
+            from openai import AsyncOpenAI  # imported lazily: replay mode never needs it
+
+            client = AsyncOpenAI(
+                base_url=settings.llm_base_url,
+                api_key=settings.llm_api_key,
+                timeout=settings.llm_timeout_s,
+                max_retries=0,
+            )
+        self.client = client
 
     async def next_turn(self, messages, tools, session) -> LLMTurn:
-        resp = await self.client.chat.completions.create(
-            model=self.model, messages=messages, tools=tools, tool_choice="auto", temperature=0
-        )
-        return parse_openai_message(resp.choices[0].message)
+        import openai
+
+        for attempt in (1, 2):
+            try:
+                resp = await asyncio.wait_for(
+                    self.client.chat.completions.create(
+                        model=self.model, messages=messages, tools=tools, tool_choice="auto", temperature=0
+                    ),
+                    timeout=self.hard_timeout_s,
+                )
+                return parse_openai_message(resp.choices[0].message)
+            except (openai.APITimeoutError, TimeoutError) as e:
+                raise LLMError(f"The LLM did not answer within {self.timeout_s} s.") from e
+            except openai.RateLimitError as e:
+                if attempt == 2:
+                    raise LLMError("The LLM provider is rate-limiting us (HTTP 429). Use replay mode.") from e
+                await asyncio.sleep(_retry_after_s(e))
+            except openai.APIStatusError as e:
+                raise LLMError(f"The LLM provider returned HTTP {e.status_code}.") from e
+            except openai.APIConnectionError as e:
+                raise LLMError("Could not reach the LLM provider.") from e
+        raise LLMError("The LLM gave no answer.")  # unreachable: the loop returns or raises

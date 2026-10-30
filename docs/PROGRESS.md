@@ -14,16 +14,16 @@
 - 85 backend tests, `make check` green, CI workflow, Dockerfile, deploy notes
 
 ## Not verified yet
-- Live LLM mode against a real provider (code tested with a fake client only)
+- Live LLM mode against a capable hosted model (pipeline works end to end in the UI against local Ollama llama3.2, but that model is too weak)
 - Docker image build and a real deployment
 - Projector on the real venue screen (Chromium at 1280×720 checked: readable)
 - Windows setup without make (commands in README)
 
 ## In progress
-- <slice, who, which files, what's left>
+- V1-4 live LLM (Person B, branch feat/live-llm): probe + trials scripts, recorder + `script_file:`, timeout/429 handling, Live option hidden unless /health says available, all done and tested (98 tests). **Left:** the two [hand] lines need a capable hosted model: put LLM_BASE_URL / LLM_MODEL / LLM_API_KEY in backend/.env, run `scripts/llm_probe.py`, then `scripts/live_trials.py s1 --runs 5` and `s2 --runs 3 --shield off --record`. Local llama3.2 (3B) can't chain tool calls (docs/API-NOTES.md).
 
 ## Known bugs
-- none known
+- S1/S2 `legit_done` only checks that an email reached Priya, so a fake summary that never read the inbox still counts as done (seen with llama3.2 live). Replay is unaffected. Read live-trial output by hand.
 
 ## Ideas / later
 - MCP gateway in front of real MCP servers (prompts/stretch-mcp-gateway.md)

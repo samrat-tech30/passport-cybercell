@@ -27,8 +27,8 @@ Slices marked ✅ were delivered by the starter and verified on 2026-10-30 (85 b
 ## V1-4 Live LLM (M1)
 - [ ] [hand] Chosen provider + model call tools reliably for S1 (5 runs in a row)
 - [ ] [hand] With the shield OFF, the live model falls for S2 at least once in 3 runs (or we say honestly that it refuses, and demo in replay)
-- [ ] [auto] Recorded live runs saved as replay fixtures; replay reproduces them
-- [ ] [auto] Live mode errors (timeout, bad JSON args) end in R0 DENY or a clean `error` event, never a hang
+- [x] [auto] Recorded live runs saved as replay fixtures; replay reproduces them (tests/test_live_llm.py)
+- [x] [auto] Live mode errors (timeout, bad JSON args) end in R0 DENY or a clean `error` event, never a hang (tests/test_live_llm.py; 429 → one retry)
 
 ## V2-A UPI payments + mandate lock (prompts/v2-A-upi-payments.md)
 - [ ] [auto] U1 legit order ALLOW; U2 review redirects payee DENY (R9 + R10); U3 PIN request DENY (R1); U4 "verify ₹10" DENY (R9)
