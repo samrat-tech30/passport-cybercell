@@ -310,6 +310,7 @@ async def test_rug_pull_after_install_locks_the_gateway_and_the_agent_never_sees
     assert rig.upstream.calls == ["list_unread_emails"]
     kinds = [e["kind"] for e in audit.recent(50)]
     assert "gateway_catalog_changed" in kinds
+    assert kinds.count("gateway_decide") == 1  # the refused calls were never recorded as granted
 
 
 async def test_catalog_report_refused_means_no_call_goes_through():

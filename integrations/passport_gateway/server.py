@@ -122,6 +122,9 @@ class Gateway:
         if self.locked:
             raise Refused(RUG_PULL)
         sid = await self._session(ctx)
+        # Before PASSPORT is even asked: if the server changed its tools since install, nothing runs
+        # and no decision is recorded as granted.
+        await self._check_catalog(sid)
         status, body = await self._post(
             f"/v1/gateway/sessions/{sid}/decide", {"tool": name, "args": args}, self.decide_timeout_s
         )
@@ -141,7 +144,6 @@ class Gateway:
         if not self._run_is_consistent(d):  # a buggy or spoofed answer must not run a tool
             log.info("tool=%s inconsistent_answer run=False", name)
             raise Refused(FAIL_CLOSED)
-        await self._check_catalog(sid)  # the server may have changed its tools since install
 
         result = await self.upstream.call_tool(name, args)
         output = "\n".join(c.text for c in result.content if getattr(c, "type", "") == "text")
