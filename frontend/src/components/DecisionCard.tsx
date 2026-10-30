@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import type { Decision, Evidence } from "../lib/api/types";
-import { preview, whereFrom } from "../lib/format";
+import { headline, preview, ruleChip, whereFrom } from "../lib/format";
 import { Stamp } from "./Stamp";
 
 interface Props {
@@ -46,6 +46,8 @@ export function DecisionCard({ d, onEvidence }: Props) {
         <Stamp verdict={d.verdict} shieldOn={d.shield_on} executed={d.executed} approval={d.approval} />
       </header>
 
+      <p className="decision__headline">{headline(d)}</p>
+
       {entries.length > 0 && (
         <ul className="args">
           {entries.map(([k, v]) => {
@@ -61,10 +63,22 @@ export function DecisionCard({ d, onEvidence }: Props) {
         </ul>
       )}
 
-      <p className="decision__msg">{d.message}</p>
+      {/* The headline already names the risky value; the backend sentence is only needed when it doesn't */}
+      {d.verdict !== "ALLOW" && !d.passports.some((p) => p.origin === "untrusted" || p.origin === "secret" || p.origin === "model_invented") && (
+        <p className="decision__msg">{d.message}</p>
+      )}
 
       <footer className="decision__foot">
-        <span className="rules">{d.reasons.map((r) => r.rule_id).join(" · ") || "No rule fired"}</span>
+        <span className="rules">
+          {d.reasons.length === 0 ? (
+            <span className="muted small">No rule fired</span>
+          ) : (
+            d.reasons.map((r) => {
+              const c = ruleChip(r.rule_id);
+              return <span key={r.rule_id} className="rule" title={c.title}>{c.label}</span>;
+            })
+          )}
+        </span>
         <span className="decision__actions">
           {!d.shield_on && d.executed && d.verdict !== "ALLOW" && <span className="pill pill--bad">Shield off: it ran</span>}
           {evidence?.segment_id && (

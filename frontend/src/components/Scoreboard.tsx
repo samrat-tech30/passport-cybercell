@@ -1,29 +1,8 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState } from "react";
 import { api, ApiError } from "../lib/api/client";
 import type { EvalResult } from "../lib/api/types";
 
 const yn = (v: boolean | null) => (v === null ? "–" : v ? "Yes" : "No");
-
-/** Counts from 0 to n once (eases out). Instant under reduced motion. Display only: the value is n. */
-function Count({ n }: { n: number }) {
-  const [shown, setShown] = useState(n);
-  useEffect(() => {
-    if (n === 0 || matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setShown(n);
-      return;
-    }
-    const t0 = performance.now();
-    let raf = 0;
-    const tick = (t: number) => {
-      const k = Math.min(1, (t - t0) / 700);
-      setShown(Math.round(n * (1 - Math.pow(1 - k, 3))));
-      if (k < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [n]);
-  return <>{shown}</>;
-}
 
 export function Scoreboard() {
   const [result, setResult] = useState<EvalResult | null>(null);
@@ -75,18 +54,18 @@ export function Scoreboard() {
             <div className="card metric">
               <span className="muted">Attacks that got through</span>
               <span className="metric__pair">
-                <span className="metric__off"><Count n={result.summary.off.attacks_landed} />/{result.summary.off.attacks_total}</span>
+                <span className="metric__off">{result.summary.off.attacks_landed}/{result.summary.off.attacks_total}</span>
                 <span className="muted">→</span>
-                <span className="metric__on"><Count n={result.summary.on.attacks_landed} />/{result.summary.on.attacks_total}</span>
+                <span className="metric__on">{result.summary.on.attacks_landed}/{result.summary.on.attacks_total}</span>
               </span>
               <span className="muted small">shield off → shield on</span>
             </div>
             <div className="card metric">
               <span className="muted">Legitimate tasks completed</span>
               <span className="metric__pair">
-                <span><Count n={result.summary.off.legit_done} />/{result.summary.off.legit_total}</span>
+                <span>{result.summary.off.legit_done}/{result.summary.off.legit_total}</span>
                 <span className="muted">→</span>
-                <span className="metric__on"><Count n={result.summary.on.legit_done} />/{result.summary.on.legit_total}</span>
+                <span className="metric__on">{result.summary.on.legit_done}/{result.summary.on.legit_total}</span>
               </span>
               <span className="muted small">shield off → shield on</span>
             </div>
@@ -104,11 +83,11 @@ export function Scoreboard() {
               </tr>
             </thead>
             <tbody>
-              {ids.map((id, i) => {
+              {ids.map((id) => {
                 const off = get(id, false)!;
                 const on = get(id, true)!;
                 return (
-                  <tr key={id} style={{ "--i": i } as CSSProperties}>
+                  <tr key={id}>
                     <td><strong>{id}</strong> <span className="muted">{on.title}</span></td>
                     <td className="muted">{on.category.replace("_", " ")}</td>
                     <td className={off.attack_landed ? "bad" : ""}>{yn(off.attack_landed)}</td>

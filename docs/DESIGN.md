@@ -26,7 +26,7 @@ The **passport stamp** on every decision card: ALLOWED (green), NEEDS YOU (amber
 | Audit | 06-audit.png | tamper evidence | chain status pill → rows |
 
 ## 6. Motion
-CSS only, tokens in tokens.css. Allowed: a decision card slides up 8 px as it arrives (320 ms), then its stamp lands (260 ms spring, 140 ms later); dialogs rise in (280 ms); the tab plate and the shield knob glide; scoreboard numbers count up once; the attacker panel's check mark draws. Buttons answer a click in 180 ms. The one 3D element is the WebGPU guilloché seal in the idle state (before the first run only; 2D canvas fallback; unmounted during a run). `prefers-reduced-motion` → no animation, seal as a still frame.
+Purposeful only (CSS, tokens in tokens.css): a new decision card fades up 4 px (200 ms); its stamp presses in from 1.15× (180 ms, no overshoot); gate-strip nodes change colour (200 ms); the evidence line flashes once (600 ms); dialogs fade (150 ms). No 3D, no count-ups, no shimmer. `prefers-reduced-motion` → none. Light theme by default (projectors), dark theme via the top-bar toggle. The gate strip (request → agent → PASSPORT check → tool) and plain-English card headlines explain the product before any rule ID.
 
 ## 7. Quality checklist
 - [ ] Matches mockups at 1440×900 and 1280×720

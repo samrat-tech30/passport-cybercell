@@ -1,10 +1,11 @@
 import { useState } from "react";
-import type { Evidence } from "../lib/api/types";
+import type { Evidence, Scenario } from "../lib/api/types";
 import type { RunState } from "../lib/useRun";
 import { ApprovalDialog } from "./ApprovalDialog";
 import { DecisionCard } from "./DecisionCard";
 import { EvidenceDrawer } from "./EvidenceDrawer";
-import { IdleSeal } from "./IdleSeal";
+import { GateStrip } from "./GateStrip";
+import { ScenarioPicker } from "./ScenarioPicker";
 import { WorldPanel } from "./WorldPanel";
 
 interface Props {
@@ -14,9 +15,13 @@ interface Props {
   onRetry: () => void;
   canRun: boolean;
   offline: boolean;
+  scenarios: Scenario[];
+  scenarioId: string;
+  onPick: (id: string) => void;
+  shieldOn: boolean;
 }
 
-export function RunView({ state, request, onAnswer, onRetry, canRun, offline }: Props) {
+export function RunView({ state, request, onAnswer, onRetry, canRun, offline, scenarios, scenarioId, onPick, shieldOn }: Props) {
   const [evidence, setEvidence] = useState<Evidence | null>(null);
   const busy = state.status === "starting" || state.status === "running";
   const count = (v: string) => state.decisions.filter((d) => d.verdict === v).length;
@@ -24,7 +29,10 @@ export function RunView({ state, request, onAnswer, onRetry, canRun, offline }: 
   const phase = state.status === "idle" ? "idle" : state.status === "done" ? "done" : state.status === "error" ? "stopped" : "running";
 
   return (
-    <div className="run">
+    <div className={`run ${state.status === "idle" ? "run--idle" : ""}`}>
+      <div className="run__gate">
+        <GateStrip state={state} />
+      </div>
       {/* Wide screens: a left column. Projector (< 1366px): a compact strip above the timeline. */}
       <section className="brief" aria-label="Task">
         <div className="card brief__item">
@@ -52,17 +60,27 @@ export function RunView({ state, request, onAnswer, onRetry, canRun, offline }: 
 
       <section className="timeline" aria-live="polite" aria-busy={busy}>
         {state.status === "idle" && (
-          <div className="empty">
-            <IdleSeal />
+          <div className="intro">
             {offline ? (
               <>
-                <p className="title">Waiting for the backend.</p>
-                <p className="muted">Start it, then press Retry.</p>
+                <h1 className="display">Waiting for the backend.</h1>
+                <p className="muted">Start it, then press Retry above.</p>
               </>
             ) : (
               <>
-                <p className="title">Pick a scenario and press Run scenario.</p>
-                <p className="muted">Try S2 with the shield off, then on. Same email, same agent.</p>
+                <h1 className="display">See an AI agent get attacked, and stopped.</h1>
+                <ol className="steps">
+                  <li><strong>Pick a scenario.</strong> <span className="muted">Most hide an attack in an email or file.</span></li>
+                  <li><strong>Run it.</strong> <span className="muted">Each tool call the agent makes is checked before it runs.</span></li>
+                  <li><strong>See why.</strong> <span className="muted">Every value shows where it came from. Outside content can't steer actions.</span></li>
+                </ol>
+                <ScenarioPicker scenarios={scenarios} value={scenarioId} onChange={onPick} />
+                <div className="intro__go">
+                  <button type="button" className="btn btn--brand btn--lg" disabled={!canRun} onClick={onRetry}>
+                    Run {scenarioId.toUpperCase()} with the shield {shieldOn ? "on" : "off"}
+                  </button>
+                  <span className="muted small">Tip: run S2 with the shield off first, then on.</span>
+                </div>
               </>
             )}
           </div>

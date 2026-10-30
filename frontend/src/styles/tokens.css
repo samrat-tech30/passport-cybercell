@@ -1,6 +1,6 @@
 /* Design tokens: the ONLY place raw colours, sizes and motion values live.
    Components use var(--token) through classes in app.css. The guard hook blocks raw hex elsewhere.
-   Dark and calm, readable from the back of a hall on a projector. Warm neutral ink, not blue-black SaaS. */
+   Light by default (projectors wash out dark UIs); dark theme via [data-theme="dark"] on <html>. */
 
 /* Self-hosted (public/fonts, SIL OFL): no network fonts at the venue. */
 @font-face {
@@ -16,39 +16,73 @@
   font-display: swap;
 }
 
+/* Light (default): a customs document. Paper, ink, one deep passport blue, printed verdict colours. */
 :root {
+  color-scheme: light;
+
+  --color-canvas: #f7f6f3;
+  --color-raised: #ffffff;
+  --color-raised-2: #fbfaf8;
+  --color-sunken: #f1efea;
+  --color-line: #e3e0d9;
+  --color-line-strong: #cfcbc2;
+  --color-highlight: rgba(255, 255, 255, 0);
+
+  --color-fg: #16171a;
+  --color-fg-muted: #5d5f66; /* 6.4:1 on paper */
+  --color-fg-faint: #6f7178; /* 4.9:1 on white: labels only */
+
+  --color-brand: #1e3a8a;
+  --color-on-brand: #ffffff;
+
+  --color-ok: #0f7a48;
+  --color-warn: #a15c07;
+  --color-bad: #b42318;
+
+  --color-origin-user: #1e40af;
+  --color-origin-trusted: #5d5f66;
+  --color-origin-untrusted: #b54708;
+  --color-origin-secret: #6d28d9;
+  --color-origin-invented: #16171a;
+
+  --lift-1: 0 1px 2px rgba(22, 23, 26, 0.05);
+  --lift-2: 0 20px 48px -12px rgba(22, 23, 26, 0.25), 0 2px 6px rgba(22, 23, 26, 0.08);
+}
+
+/* Dark: true neutral greys, no tint. */
+[data-theme="dark"] {
   color-scheme: dark;
 
-  /* surfaces: warm graphite ink, three steps */
-  --color-canvas: #0d0d0f;
-  --color-raised: #151517;
-  --color-raised-2: #1b1b1e; /* hover / nested */
-  --color-sunken: #09090a;
-  --color-line: #26262a;
-  --color-line-strong: #36363b;
-  --color-highlight: rgba(255, 255, 255, 0.04); /* 1px top edge on raised surfaces */
+  --color-canvas: #0a0a0b;
+  --color-raised: #121214;
+  --color-raised-2: #18181b;
+  --color-sunken: #0d0d0f;
+  --color-line: #232326;
+  --color-line-strong: #34343a;
+  --color-highlight: rgba(255, 255, 255, 0.03);
 
-  /* text */
-  --color-fg: #ecebe8; /* warm off-white, 16:1 on canvas */
-  --color-fg-muted: #a09f9a; /* 7.4:1 on canvas */
-  --color-fg-faint: #7c7b76; /* 4.6:1 on raised: labels only, never body text */
+  --color-fg: #ededef;
+  --color-fg-muted: #9a9aa2; /* 7.0:1 on canvas */
+  --color-fg-faint: #85858d;
 
-  /* brand: one colour, used for the main action and focus */
-  --color-brand: #7fb0ff;
-  --color-on-brand: #08111f;
+  --color-brand: #8fb4ff;
+  --color-on-brand: #0a0a0b;
 
-  /* verdicts (meaning only): ink on paper, not neon */
-  --color-ok: #4fc58d;
-  --color-warn: #e9b44c;
-  --color-bad: #f2706a;
+  --color-ok: #4cc38a;
+  --color-warn: #f0b44c;
+  --color-bad: #f2726b;
 
-  /* origins: where a value was born */
-  --color-origin-user: #7fb0ff;
-  --color-origin-trusted: #a09f9a;
-  --color-origin-untrusted: #f0974a;
-  --color-origin-secret: #b9a0f5;
-  --color-origin-invented: #ecebe8;
+  --color-origin-user: #8fb4ff;
+  --color-origin-trusted: #9a9aa2;
+  --color-origin-untrusted: #f39a52;
+  --color-origin-secret: #b9a2f7;
+  --color-origin-invented: #ededef;
 
+  --lift-1: inset 0 1px 0 var(--color-highlight), 0 1px 2px rgba(0, 0, 0, 0.5);
+  --lift-2: inset 0 1px 0 var(--color-highlight), 0 24px 64px -12px rgba(0, 0, 0, 0.75);
+}
+
+:root {
   /* type */
   --font-text: "Geist", "Segoe UI", system-ui, -apple-system, sans-serif;
   --font-mono: "Geist Mono", "SFMono-Regular", Consolas, ui-monospace, monospace;
@@ -74,17 +108,13 @@
   --radius-control: 8px;
   --radius-card: 12px;
 
-  /* elevation (two levels): hairline + soft drop, no glow */
-  --lift-1: inset 0 1px 0 var(--color-highlight), 0 1px 2px rgba(0, 0, 0, 0.45);
-  --lift-2: inset 0 1px 0 var(--color-highlight), 0 24px 64px -12px rgba(0, 0, 0, 0.7), 0 2px 6px rgba(0, 0, 0, 0.4);
-
   /* motion */
   --dur-quick: 180ms;
-  --dur-enter: 320ms; /* a card arrives */
-  --dur-drawer: 280ms; /* a dialog opens */
-  --dur-stamp: 260ms; /* the signature moment: the verdict stamp lands */
-  --dur-count: 700ms; /* scoreboard numbers settle */
-  --delay-stamp: 140ms; /* the stamp lands just after its card */
+  --dur-enter: 200ms; /* a card arrives */
+  --dur-drawer: 150ms; /* a dialog opens */
+  --dur-stamp: 180ms; /* the verdict stamp presses in */
+  --dur-hit: 600ms; /* the evidence line flashes once */
+  --delay-stamp: 80ms; /* the stamp lands just after its card */
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -96,7 +126,7 @@
     --dur-enter: 0ms;
     --dur-drawer: 0ms;
     --dur-stamp: 0ms;
-    --dur-count: 0ms;
+    --dur-hit: 0ms;
     --delay-stamp: 0ms;
   }
 }

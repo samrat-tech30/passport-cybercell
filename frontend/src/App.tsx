@@ -24,6 +24,17 @@ export default function App() {
   const [mode, setMode] = useState<"replay" | "live">("replay");
   const [tab, setTab] = useState<Tab>("run");
   const [code, setCode] = useState(getAccessCode());
+  const [theme, setTheme] = useState(() => document.documentElement.dataset.theme === "dark" ? "dark" : "light");
+  const toggleTheme = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    document.documentElement.dataset.theme = next;
+    try {
+      localStorage.setItem("passport.theme", next);
+    } catch {
+      /* storage blocked: theme just won't be remembered */
+    }
+  };
   const { state, start, answer } = useRun();
 
   const load = useCallback(() => {
@@ -125,6 +136,12 @@ export default function App() {
           </form>
         )}
 
+        <button type="button" className="theme" onClick={toggleTheme} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`} title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}>
+          <svg viewBox="0 0 20 20" aria-hidden="true">
+            {theme === "dark" ? <path d="M10 3v1.5M10 15.5V17M3 10h1.5M15.5 10H17M5 5l1 1M14 14l1 1M5 15l1-1M14 6l1-1M13 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" /> : <path d="M15.5 12.5A6.5 6.5 0 0 1 7.5 4.5a6.5 6.5 0 1 0 8 8z" />}
+          </svg>
+        </button>
+
         {health?.access_code_required && (
           <label className="field code">
             <span className="muted small">Demo code</span>
@@ -156,7 +173,7 @@ export default function App() {
       {tab === "run" && <Legend />}
 
       <main>
-        {tab === "run" && <RunView state={state} request={scenario?.user_request ?? ""} onAnswer={answer} onRetry={run} canRun={canRun} offline={Boolean(loadError)} />}
+        {tab === "run" && <RunView state={state} request={scenario?.user_request ?? ""} onAnswer={answer} onRetry={run} canRun={canRun} offline={Boolean(loadError)} scenarios={scenarios} scenarioId={scenarioId} onPick={setScenarioId} shieldOn={shieldOn} />}
         {tab === "score" && <Scoreboard />}
         {tab === "audit" && <AuditView />}
       </main>
