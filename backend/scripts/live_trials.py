@@ -16,7 +16,7 @@ import asyncio
 import os
 import sys
 
-from llm_probe import load_env
+from llm_probe import BACKEND_DIR, load_env
 
 
 async def trials(args: argparse.Namespace) -> int:
@@ -72,6 +72,7 @@ def main() -> None:
     ap.add_argument("--model")
     ap.add_argument("--key-var")
     args = ap.parse_args()
+    os.chdir(BACKEND_DIR)  # DATA_DIR=./var in .env is relative: keep the db in backend/var
     load_env(args)
     if args.record:
         os.environ["RECORD_FIXTURES"] = "1"
