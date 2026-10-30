@@ -42,7 +42,7 @@ Shield OFF: identical decisions are computed and logged ("would deny"), but tool
 | `frontend/src/lib/useRun.ts` | live events → UI state |
 
 ## 4. Rules
-See the table in `.claude/skills/passport-gate/SKILL.md` (R0–R8) and `policy.yaml` for risk scores.
+See the table in `.claude/skills/passport-gate/SKILL.md` (R0–R8, plus R11_LOOKALIKE and the disguise pass from V2-B) and `policy.yaml` for risk scores.
 
 ## 5. Session states
 `created → running → (waiting_approval ↔ running)* → done | error`. Every state is visible in the UI.

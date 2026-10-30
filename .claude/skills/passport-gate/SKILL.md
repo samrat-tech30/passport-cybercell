@@ -33,7 +33,8 @@ Shield OFF: same decision is computed and logged, but the tool runs anyway. That
 | R7_HIGH_IMPACT | high-impact tool, or a soft sink (invoice amount) from a document | REQUIRE_APPROVAL |
 | R8_TRIFECTA | session saw a secret AND untrusted content, and the call is egress | REQUIRE_APPROVAL |
 | R11_LOOKALIKE | non-ASCII character in a string sink value (Cyrillic а in "bigbаsket"); message says "looks like <value>" | DENY |
-Tracing (V2-B): each origin is searched exactly, then in disguise (`gate/disguise.py` views: "at"/"dot", base64, Indic digits, 3+ digit words, zero-width), before the next origin. A disguised hit sets `Evidence.disguised`.
+
+Tracing (V2-B): each origin is searched exactly, then in disguise (`gate/disguise.py` views: "at"/"dot", base64, Indic digits, 3+ digit words, invisible characters), before the next origin. A disguised hit sets `Evidence.disguised`; a disguised hit in the user's words or trusted config only ASKs (R5), never grants ALLOW. Exact matches in user/trusted text must be whole values; a SECRET match needs the whole secret inside the value.
 Final verdict = strongest reason (DENY > ASK > ALLOW). Primary rule = highest-risk reason with that verdict. All reasons are kept as evidence.
 v2 adds R9_MANDATE_PAYEE, R10_MANDATE_AMOUNT, R11_LOOKALIKE, R12_KNOWN_THREAT (see prompts/v2-*.md). Adding a rule = add it to `RULE_IDS` in policy.py AND `risk:` in policy.yaml, or start-up fails.
 

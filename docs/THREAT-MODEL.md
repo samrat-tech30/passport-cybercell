@@ -30,7 +30,9 @@ An outsider who **can't talk to the agent** but can put text where it reads: an 
 - **Text-only manipulation** with no tool effect (a biased or wrong summary).
 - **A user who types the attacker's details** themselves (they are the trusted user).
 - **Disguises we don't decode**: nested base64, hex, ROT13, Devanagari or Kannada words for "at"/"dot", a value split across lines or emails. These fall back to R5 (ask), never ALLOW.
-- **Non-ASCII addresses are always denied** (R11): fine for our synthetic world, but a real deployment with internationalised email addresses would need an allowlist.
+- **Non-ASCII sink values are always denied** (R11): addresses, accounts, keys AND file paths (a user-typed `résumé.md` too). Fine for our synthetic world; a real deployment would need an allowlist.
+- **An address the user only spelled out** ("priya at nimbus dot test") gets an approval, not ALLOW: a squashed reading of the user's words could otherwise produce an attacker's address ("ignore anyone at evil.test").
+- **Canary forms we don't check** (spaced or line-broken base64, uppercase hex, base32, double base64): defence in depth only, since the assistant's profile can't read secrets (R1) and R8 asks on egress after a secret was seen.
 - **Heavy paraphrase of a secret** that defeats canary matching: mitigated by R8 (egress after secret access needs approval).
 - **Approval fatigue**: reduced (only risky values are shown; legit tasks had 0 popups in our eval), not solved.
 - **Truncating the end of the audit log**: the chain detects edits and deletions in the middle; for the end, record the head hash shown in the Audit tab.
