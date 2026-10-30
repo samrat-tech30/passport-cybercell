@@ -2,9 +2,15 @@
 
 > Claude: the session-start hook loads this file. Update it at the end of every task (`/checkpoint`, `/handoff`). Keep it under 150 lines; details go to AI-LOG.md.
 
-**Last updated:** 2026-10-31 (merged V2-B + V1-4 live LLM)
+**Last updated:** 2026-10-31 01:45 (G0 gateway contract + docs, branch feat/gateway-contract)
 **Live URLs:** frontend <…> · backend <…>
-**Next task:** merge V1-4; teammates pull main. Live demo: S1 live, S2 OFF in replay, S2 ON live or replay.
+**Next task:** merge G0 to main → Person A starts G1 (feat/gateway-engine), Person B merges main into feat/gateway-mcp (GB0/G2). Plan: prompts/GATEWAY-PROMPTS.md.
+
+## Done (G0 gateway contract, Person A, feat/gateway-contract)
+- contracts/README.md "Gateway API": /v1/gateway/sessions (create, list), intent (locked after first), decide (approval waits ≤ 40 s in the request), observe (once, trust from registry); X-Gateway-Token, 503 when unset; 300/min per token; event gateway_call; 5 error codes; CHANGELOG v0.2.0
+- ARCHITECTURE §8 gateway mode, THREAT-MODEL gateway limits, 3 DECISIONS, ACCEPTANCE G1–G5, PLAN + prompts index point to GATEWAY-PROMPTS.md, v2-E marked superseded, .env.example vars
+- Verified: MCP TS SDK 1.32.2 default request timeout = 60 s (API-NOTES.md); what Claude Desktop passes is not verified
+- No code: contract examples + openapi.json come with G1
 
 ## Done (V1-4 live LLM, Person B, feat/live-llm)
 - Groq openai/gpt-oss-120b live: S1 5/5; S2 shield OFF leaks 2/9 (reads the secret 9/9) → attack demo stays in replay (DECISIONS.md); shield ON blocks read_secret live
@@ -37,5 +43,5 @@
 - S1/S2 `legit_done` only checks that an email reached Priya, so a fake summary that never read the inbox still counts as done (seen with llama3.2 live). Replay is unaffected. Read live-trial output by hand.
 
 ## Ideas / later
-- MCP gateway in front of real MCP servers (prompts/stretch-mcp-gateway.md)
+- MCP gateway in front of real MCP servers: now the plan (prompts/GATEWAY-PROMPTS.md, G0–G5)
 - LangGraph adapter calling `/v1/decide` (prompts/stretch-langgraph-adapter.md)

@@ -17,6 +17,9 @@
 - vite 8.3.5 needs Node ^20.19 or >=22.12; @vitejs/plugin-react 6.1.2 peers are optional (tested, 2026-10-30)
 - `EventSource` can't send custom headers → the events endpoint is a GET with no access code; it reconnects with `Last-Event-ID`, which the backend honours (tested, 2026-10-30)
 
+## MCP
+- `@modelcontextprotocol/sdk` 1.32.2 (TypeScript, latest on npm 2026-10-31): `DEFAULT_REQUEST_TIMEOUT_MSEC = 60000` in `shared/protocol.js`; `request()` uses `options.timeout ?? 60000` and fails with "Request timed out". Progress notifications reset the timer only if the client passes `resetTimeoutOnProgress: true`. So `GATEWAY_APPROVAL_WAIT_S` must stay well under 60. Which timeout Claude Desktop / Cursor actually pass: not verified yet (read unpkg source, 2026-10-31)
+
 ## External services
 - LLM provider: check with `cd backend && .venv/Scripts/python scripts/llm_probe.py [--base-url --model --key-var]`, then `scripts/live_trials.py s1 --runs 5`.
   - Ollama 0.40.13 local, `http://localhost:11434/v1`, `llama3.2:latest` (3B), key: any value: probe returns a correct single tool call (11.6 s cold). **Not good enough for the agent:** in S1 x5 and S2 x3 (shield OFF) it never called `list_unread_emails`; it sent Priya a fake summary ("See list_unread_emails() for details") in one step, so it never saw Email #3. Not a refusal: it can't chain tool calls (tested, 2026-10-30)

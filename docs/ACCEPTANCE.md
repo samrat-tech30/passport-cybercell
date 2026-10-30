@@ -38,11 +38,31 @@ Slices marked ✅ were delivered by the starter and verified on 2026-10-30 (85 b
 ## V2-C Herd immunity (prompts/v2-C-herd-immunity.md)
 - [ ] [auto] value blocked in session A → R12 in session B; same poisoned email quarantined before B's LLM sees it
 - [ ] [hand] two-window demo works
-## V2-E MCP gateway (prompts/v2-E-mcp-gateway.md; replaces V2-D)
-- [ ] [auto] s2 over MCP: read ALLOW, attacker send DENY with rule + line, legit send ALLOW (integrations/mcp_gateway/tests)
-- [ ] [auto] fail closed: tool before `start_task`, second `start_task`, backend down, REQUIRE_APPROVAL without approval → all refused; the tool never runs
-- [ ] [hand] the s2 example works in Claude Desktop or the MCP Inspector; gateway calls show in the Audit tab
-## V2-D Payment visa (prompts/v2-D-payment-visa.md; dropped for V2-E, only if everything else is done)
+## Gateway (prompts/GATEWAY-PROMPTS.md; replaces V2-E and V2-D)
+### G1 Gateway sessions in the backend (Person A)
+- [ ] [auto] tests/test_gateway_api.py green, each fails without the code: no token env → 503, wrong token → 401; s2 flow over HTTP (list ALLOW, attacker send DENY R3 with the email line, Asha send ALLOW); decide before intent → 409, second intent → 409; observe for a DENY'd decision → 409, observe twice → 409, the caller can't choose the trust label; observed secret then send_email with it → DENY (R4 or R2); REQUIRE_APPROVAL approved in time → run=true, no answer → run=false with approval "timeout"; two sessions never affect each other's verdicts; shield_on=false → run=true with verdict still DENY; decide raising → run=false, R0
+- [ ] [auto] contract examples regenerated for the new endpoints; `make check` green
+- [ ] [auto] `make eval` unchanged (attacks 9/9 → 0/9, legit 7/7 → 7/7, 0 popups)
+- [ ] [hand] red-teamer run on the gateway routes, findings fixed before merging
+### G2 Fake upstream + gateway + fooled agent (Person B)
+- [ ] [hand] `fooled_agent.py` runs end to end against the stub, then the real backend
+- [ ] [auto] the gateway's stdout carries only MCP protocol traffic
+- [ ] [auto] `nimbus_mcp` refuses to start without `NIMBUS_GATEWAY_KEY`
+- [ ] [auto] `make check` green
+### G3 "Gateway" tab in the dashboard (Person A)
+- [ ] [hand] Gateway tab: connected agents (poll 3 s, empty state with commands), live decisions of the selected session, approval center with countdown and the timed-out message; Agent, Scoreboard and Audit tabs unchanged
+- [ ] [hand] screenshot loop (desktop + `--projector`) with a `make fooled-agent` session, then ui-critic
+- [ ] [auto] `make check` green
+### G4 Real end-to-end + Claude Desktop (Person B)
+- [ ] [auto] integrations/tests/test_e2e.py under 30 s against the real backend, each fails without the code: s2 story (only Asha in sent mail); tool before start_task and second start_task refused; backend stopped, garbage or 500 → refused, upstream never called; unknown tool refused; read_secret → DENY R1; nimbus_mcp without key refuses to start; the key never reaches the agent; PASSPORT_SHIELD=off → attacker send goes through, decision still DENY
+- [ ] [hand] integrations/README.md (setup Windows + macOS, Claude Desktop config with no upstream credential, Inspector command, demo script, honest limits)
+- [ ] [hand] tried in Claude Desktop; what really happened written in docs/AI-LOG.md
+- [ ] [auto] docs/RESULTS.md "Gateway" table filled only from the e2e run output; `make check` green
+### G5 Red-team, review, pitch (both)
+- [ ] [hand] red-teamer on integrations/ and app/api/gateway_routes.py (skip /decide, observe abuse, approval reuse, token leaks, session crossover, malformed MCP args, upstream output posing as PASSPORT); every bypass a failing test first, then a fix
+- [ ] [hand] reviewer on the diff since main@G0; blocking findings fixed
+- [ ] [hand] PITCH.md + slides updated with numbers only from `make eval` and the gateway e2e run; `99-demo-prep.md` done
+## V2-D Payment visa (prompts/v2-D-payment-visa.md; dropped for the gateway, only if everything else is done)
 - [ ] [auto] direct tool call without visa, edited args, reused visa, expired visa → all refused; approved flow still pays
 
 ## E-1 Demo ready (by 12:00)
