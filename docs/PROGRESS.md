@@ -2,17 +2,21 @@
 
 > Claude: the session-start hook loads this file. Update it at the end of every task (`/checkpoint`, `/handoff`). Keep it under 150 lines; details go to AI-LOG.md.
 
-**Last updated:** 2026-10-31 03:31 (G1 + G2 + red-team fixes by Person B while Person A was offline; merged to main)
+**Last updated:** 2026-10-31 03:47 (Person B: G1, G2, G4 except the Claude Desktop trial, red-team + review fixes, pitch; all on main)
 **Live URLs:** frontend <…> · backend <…>
 **Next task:** Person A → G3 Gateway tab (feat/gateway-ui from main). Person B → Claude Desktop trial with the new gateway (last G4 item), then G5 pitch, E-1. Handoff: see "Handoff 05:30" below.
 
 ## Handoff 05:30 (Person B → Person A)
-- On main: G1 backend gateway API + G2 MCP side. Both checked: backend ruff + 152 tests + eval (9/9 → 0/9 attacks, 7/7 legit, 0 popups) + frontend build + guard hook; `make gateway-test` 17 passed.
+- On main: G1 backend gateway API + G2 MCP side. Both checked: backend ruff + 172 tests + eval (9/9 → 0/9 attacks, 7/7 legit, 0 popups) + frontend build + guard hook; `make gateway-test` 23 passed (incl. 4 real e2e).
 - Windows has no `make`: use `backend/.venv/Scripts/python …` directly (README "without make"). `scripts/check.sh` expects `.venv/bin`, so on Windows run its steps by hand.
 - To demo the gateway locally: set `PASSPORT_GATEWAY_TOKEN` (≥ 24 chars) in `backend/.env`, restart the backend, then in a shell with the same token: `backend/.venv/Scripts/python integrations/demo_agent/fooled_agent.py` (and `--shield off`). Sessions appear in `GET /v1/gateway/sessions` and in the Audit tab; open one in G3.
 - Gateway sessions: `GET /sessions/{id}` has `mode: "gateway"`, `agent_name`, `client`; `user_request` is `""` until start_task. New SSE event `gateway_call {decision_id, run, message}`; TS types `GatewaySessionRow`, `GatewayCallEvent` are already in `frontend/src/lib/api/types.ts`.
 - Approvals: `/decide` waits `GATEWAY_APPROVAL_WAIT_S` (default 40) for `POST /approvals/{decision_id}`; `approval_needed` fires on the session's SSE stream like today.
 - Unmerged on purpose (plan: v2 branches stay pushed): `origin/feat/attacks` (s9–s13 attack scenarios), `origin/feat/email-fields` (email header labelling, last commit "red-team contacts (wip)"). Decide at 08:00 go/no-go.
+
+## Done (G5 Person B part, fix/gateway-review + feat/gateway-pitch)
+- Reviewer on the whole gateway diff since G0: no blocking issue; 4 should-fix + nits all fixed (approved-call message, gateway cross-checks run vs verdict/shield, gateway sessions never evicted + "session lost" message, pending-approval 500, SSE `gateway_call`, secret segments hidden). 172 backend tests, 23 gateway tests
+- PITCH.md: "Gateway segment" (5 steps, for the 08:00 go/no-go), judge Q&A (Gemini, raw server, real Gmail), stale 6/6 row removed. Slides not touched
 
 ## Done (G4 partly, Person B, feat/gateway-e2e)
 - `integrations/tests/test_e2e.py`: uvicorn on a free port + the gateway over real stdio (4 tests, ~30–36 s on Windows); `integrations/README.md` (setup Win/macOS, Claude Desktop config with no upstream credential, Store-install path, Inspector, demo script, limits); RESULTS.md "Gateway" table from the 21-test run
