@@ -1,0 +1,28 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/v1/gateway/sessions",
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "items": [
+        {
+          "session_id": "ses_0123456789",
+          "agent_name": "Claude Desktop",
+          "client": "claude-ai",
+          "shield_on": true,
+          "intent": "Summarise my unread emails and send the summary to priya@nimbus.test",
+          "status": "running",
+          "counts": {
+            "ALLOW": 1,
+            "REQUIRE_APPROVAL": 0,
+            "DENY": 1
+          },
+          "created_ts": 1793370000.0
+        }
+      ]
+    }
+  }
+}

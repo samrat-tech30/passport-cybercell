@@ -508,6 +508,217 @@
           }
         }
       }
+    },
+    "/v1/gateway/sessions": {
+      "get": {
+        "summary": "List Gateway Sessions",
+        "operationId": "list_gateway_sessions_v1_gateway_sessions_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response List Gateway Sessions V1 Gateway Sessions Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "New Gateway Session",
+        "operationId": "new_gateway_session_v1_gateway_sessions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GatewaySessionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response New Gateway Session V1 Gateway Sessions Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/gateway/sessions/{session_id}/intent": {
+      "post": {
+        "summary": "Intent",
+        "operationId": "intent_v1_gateway_sessions__session_id__intent_post",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntentIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Intent V1 Gateway Sessions  Session Id  Intent Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/gateway/sessions/{session_id}/decide": {
+      "post": {
+        "summary": "Gateway Decide",
+        "operationId": "gateway_decide_v1_gateway_sessions__session_id__decide_post",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GatewayDecideIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Gateway Decide V1 Gateway Sessions  Session Id  Decide Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/gateway/sessions/{session_id}/observe": {
+      "post": {
+        "summary": "Observe",
+        "operationId": "observe_v1_gateway_sessions__session_id__observe_post",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ObserveIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Observe V1 Gateway Sessions  Session Id  Observe Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -595,6 +806,56 @@
         ],
         "title": "DecideIn"
       },
+      "GatewayDecideIn": {
+        "properties": {
+          "tool": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Tool"
+          },
+          "args": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Args"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "tool",
+          "args"
+        ],
+        "title": "GatewayDecideIn"
+      },
+      "GatewaySessionIn": {
+        "properties": {
+          "agent_name": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Agent Name"
+          },
+          "client": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Client"
+          },
+          "shield_on": {
+            "type": "boolean",
+            "title": "Shield On",
+            "default": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "agent_name",
+          "client"
+        ],
+        "title": "GatewaySessionIn"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -607,6 +868,22 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "IntentIn": {
+        "properties": {
+          "request": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Request"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request"
+        ],
+        "title": "IntentIn"
       },
       "NewSessionIn": {
         "properties": {
@@ -653,6 +930,28 @@
         "additionalProperties": false,
         "type": "object",
         "title": "NewSessionIn"
+      },
+      "ObserveIn": {
+        "properties": {
+          "decision_id": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Decision Id"
+          },
+          "output": {
+            "type": "string",
+            "maxLength": 20000,
+            "title": "Output"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "decision_id",
+          "output"
+        ],
+        "title": "ObserveIn"
       },
       "ValidationError": {
         "properties": {

@@ -119,6 +119,7 @@ class Event(BaseModel):
         "approval_result",
         "tool_result",
         "world_event",
+        "gateway_call",
         "done",
         "error",
     ]

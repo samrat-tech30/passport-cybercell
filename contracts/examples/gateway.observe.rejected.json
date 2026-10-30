@@ -1,0 +1,19 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/v1/gateway/sessions/ses_0123456789/observe",
+    "body": {
+      "decision_id": "dec_ab6a59193e",
+      "output": "<tool output>"
+    }
+  },
+  "response": {
+    "status": 409,
+    "body": {
+      "error": {
+        "code": "observe_rejected",
+        "message": "Output can be reported once, only for a call this session ran."
+      }
+    }
+  }
+}

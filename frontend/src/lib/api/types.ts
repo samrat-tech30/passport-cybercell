@@ -67,6 +67,7 @@ export type EventType =
   | "approval_result"
   | "tool_result"
   | "world_event"
+  | "gateway_call"
   | "done"
   | "error";
 
@@ -147,4 +148,27 @@ export interface EvalSide {
 export interface EvalResult {
   summary: { off: EvalSide; on: EvalSide };
   rows: EvalRow[];
+}
+
+/** GET /v1/gateway/sessions (contracts/README.md "Gateway API"); read by the dashboard's Gateway tab. */
+export interface GatewaySessionRow {
+  session_id: string;
+  agent_name: string;
+  client: string;
+  shield_on: boolean;
+  intent: string | null;
+  status: string;
+  counts: { ALLOW: number; REQUIRE_APPROVAL: number; DENY: number };
+  created_ts: number;
+}
+
+export interface GatewaySessionList {
+  items: GatewaySessionRow[];
+}
+
+/** Data of the `gateway_call` event. */
+export interface GatewayCallEvent {
+  decision_id: string;
+  run: boolean;
+  message: string;
 }

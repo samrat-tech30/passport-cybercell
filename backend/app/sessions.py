@@ -34,10 +34,10 @@ class Session:
     scenario: Scenario | None
     user_request: str
     shield_on: bool
-    mode: Literal["replay", "live"]
+    mode: Literal["replay", "live", "gateway"]
     world: World
     gate: GateContext
-    llm: LLM
+    llm: LLM | None  # None for gateway sessions: the agent runs elsewhere
     bus: Bus
     approval_mode: ApprovalMode
     approval_timeout_s: int
@@ -46,6 +46,10 @@ class Session:
     recorder: Recorder | None = None
     status: str = "created"
     decisions: dict[str, Decision] = field(default_factory=dict)
+    # Gateway sessions only: decision id -> (tool, validated args) for calls answered run=true,
+    # and the ids whose output was already observed (once per decision).
+    gateway_runs: dict[str, tuple[str, dict[str, Any]]] = field(default_factory=dict)
+    gateway_observed: set[str] = field(default_factory=set)
     _world_events_saved: int = 0
 
     async def emit(self, type_: str, data: dict[str, Any] | None = None) -> None:
@@ -150,6 +154,44 @@ def create_session(
     if persist:
         repo.create_session(sid, scenario.id if scenario else None, request, shield_on, mode)
         repo.set_session_capsule(sid, capsule.model_dump())
+    SESSIONS[sid] = s
+    while len(SESSIONS) > MAX_SESSIONS_IN_MEMORY:
+        SESSIONS.popitem(last=False)
+    return s
+
+
+def create_gateway_session(settings: Settings, *, agent_name: str, client: str, shield_on: bool) -> Session:
+    """A session driven by an outside agent through the MCP gateway (contracts/README.md "Gateway API").
+
+    No LLM and no agent loop. Its World is used only for redaction and the vault: tools run upstream,
+    never here. The intent (capsule + USER segment) arrives later with the first start_task.
+    """
+    world = World()
+    policy = load_policy()
+    sid = new_id("ses")
+    gate = GateContext(
+        session_id=sid,
+        policy=policy,
+        store=new_store("", world),
+        capsule=build_capsule(""),
+        world=world,
+        profile=policy.default_profile,
+    )
+    s = Session(
+        id=sid,
+        scenario=None,
+        user_request="",
+        shield_on=shield_on,
+        mode="gateway",
+        world=world,
+        gate=gate,
+        llm=None,
+        bus=Bus(sid),
+        approval_mode="interactive",
+        approval_timeout_s=settings.gateway_approval_wait_s,
+        max_steps=0,
+    )
+    repo.create_gateway_session(sid, agent_name, client, shield_on)
     SESSIONS[sid] = s
     while len(SESSIONS) > MAX_SESSIONS_IN_MEMORY:
         SESSIONS.popitem(last=False)

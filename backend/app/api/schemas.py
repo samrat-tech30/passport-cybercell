@@ -22,6 +22,26 @@ class ApprovalIn(Strict):
     approve: bool
 
 
+class GatewaySessionIn(Strict):
+    agent_name: str = Field(min_length=1, max_length=60)
+    client: str = Field(min_length=1, max_length=60)
+    shield_on: bool = True
+
+
+class IntentIn(Strict):
+    request: str = Field(min_length=1, max_length=2000)
+
+
+class GatewayDecideIn(Strict):
+    tool: str = Field(min_length=1, max_length=64)
+    args: dict[str, Any]
+
+
+class ObserveIn(Strict):
+    decision_id: str = Field(min_length=1, max_length=40)
+    output: str = Field(max_length=20_000)
+
+
 class ContextItem(Strict):
     source: str = Field(min_length=1, max_length=200)
     trust: Literal["trusted", "untrusted", "secret"]

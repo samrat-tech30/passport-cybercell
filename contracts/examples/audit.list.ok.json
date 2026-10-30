@@ -63,7 +63,7 @@
             "rules": [
               "R2_CANARY",
               "R3_SINK_UNTRUSTED",
-              "R8_TRIFECTA"
+              "R4_SECRET_EGRESS"
             ],
             "shield_on": false,
             "step": 3,
