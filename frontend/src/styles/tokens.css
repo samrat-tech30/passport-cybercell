@@ -95,7 +95,11 @@
   --text-numeral: 40px;
   --text-display: 48px;
   --text-metric: 64px;
+  --text-hero: 136px; /* the one scoreboard number */
   --tracking-serif: -0.02em;
+  --tracking-display: -0.028em; /* big serif sizes read loose at -0.02 */
+  --tracking-text: -0.006em; /* Geist at 17px and up */
+  --measure: 64ch;
   --tracking-caps: 0.12em;
 
   /* space (use only these) */

@@ -9,7 +9,7 @@ Calm, editorial, exact. A customs desk printed on good paper, not a hacker movie
 3. **Restraint over decoration.** White page, near-black ink, 1px lines, almost no shadows.
 4. **One blue action per view.** `--sx-blue` is only for the main action (Run scenario, Run evaluation, Verify chain, Retry). Everything else is an ink pill, an outlined pill or a text link.
 5. **One sky block per page** (`--sx-sky`) for the feature moment: the request and Run on Agent, the metrics on Scoreboard.
-6. **Yellow is a highlighter, not a colour.** It marks text that came from outside, a phrase in a headline, an "Attack" tag, or an illustration accent. It is never a button or a large fill.
+6. **Yellow is a highlighter, not a colour.** In headlines it is drawn like a pen (a thick underline under the lower half of the letters, `.hl`), not a box. It marks text that came from outside, a phrase in a headline, an "Attack" tag, or an illustration accent. It is never a button or a large fill.
 7. **Every state is designed:** idle, starting, running, waiting for approval, done, error, backend unreachable, empty.
 
 ## 3. Signature element
@@ -50,7 +50,7 @@ The **passport stamp** on every decision card: ALLOWED (green ink), NEEDS YOU (a
 | Agent, shield off | 02-agent-shield-off.png | see the attack land | red-ink attacker card in the rail → "Would deny" stamps |
 | Evidence | 03-evidence.png | see the exact source line | document sheet, highlighted line, "Hidden in the original email" |
 | Approval | 04-approval.png | decide in 5 seconds | risky values with origins → why → Reject (ink, focused) / Approve (outline) |
-| Scoreboard | 05-scoreboard.png | proof | serif headline with "Fails after." highlighted → metrics in the sky block → table |
+| Scoreboard | 05-scoreboard.png | proof | serif headline with "Fails after." highlighted → sky block: one huge number (attacks through with the shield on) + a ledger of every scenario, off vs on (red cell = went wrong, green outline = wanted outcome; groups match eval_runner) → per-scenario table |
 | Audit | 06-audit.png | tamper evidence | headline → chain status pill → ruled table |
 
 **Idle Agent:** a serif headline with the line-art passport, the sky hero, then the scenario list. Scenarios are ruled rows with a radio, never a grid of floating cards.

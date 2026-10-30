@@ -11,6 +11,8 @@
 html,
 body {
   margin: 0;
+  font-kerning: normal;
+  font-feature-settings: "kern", "liga", "calt";
   background: var(--color-canvas);
   color: var(--color-fg);
   font-family: var(--font-text);
@@ -76,7 +78,8 @@ code,
 
 .display {
   font-size: var(--text-display);
-  line-height: 1.05;
+  line-height: 1.04;
+  letter-spacing: var(--tracking-display);
 }
 
 .h2 {
@@ -84,11 +87,19 @@ code,
   line-height: 1.1;
 }
 
+/* Vertical rhythm for every page head: eyebrow, 12, headline, 16, lead. */
+.display + .lead,
+.intro .lead {
+  margin-top: var(--space-4);
+}
+
 .lead {
   font-size: var(--text-lead);
+  line-height: 1.6;
+  letter-spacing: var(--tracking-text);
   color: var(--color-fg-muted);
-  max-width: 62ch;
-  text-wrap: pretty;
+  max-width: var(--measure);
+  text-wrap: balance;
 }
 
 .eyebrow {
@@ -99,7 +110,7 @@ code,
   font-size: var(--text-small);
   font-weight: 500;
   color: var(--color-fg-muted);
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-3);
 }
 
 .label {
@@ -117,13 +128,16 @@ code,
 }
 
 /* The highlighter: yellow is emphasis, never a colour block. */
+/* Drawn like a real highlighter pen: a band across the lower half of the letters, under the ink,
+   not a box around the whole line height. */
 .hl {
-  background: var(--color-marker);
+  background: none;
   color: inherit;
-  padding: 0 0.12em;
-  border-radius: var(--radius-mark);
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
+  text-decoration-line: underline;
+  text-decoration-color: var(--color-marker);
+  text-decoration-thickness: 0.4em;
+  text-underline-offset: -0.24em;
+  text-decoration-skip-ink: none;
 }
 
 .error {
@@ -1367,65 +1381,204 @@ main {
   gap: var(--space-6);
   margin-bottom: var(--space-6);
 }
-.page__head .display {
-  margin-bottom: var(--space-3);
-}
 
-.metrics {
+
+/* Scoreboard: one huge number on the left, a per-scenario ledger on the right, in the sky block. */
+.score {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  padding: var(--space-6);
+  grid-template-columns: minmax(300px, 5fr) 7fr;
   border-radius: var(--radius-surface);
   background: var(--color-hero);
 }
 
-.metric {
+.score__hero {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  padding: 0 var(--space-5);
-}
-.metric:first-child {
-  padding-left: 0;
-}
-.metric + .metric {
-  border-left: 1px solid var(--color-line-strong);
+  padding: var(--space-6) var(--space-6) var(--space-5);
 }
 
-.metric__label {
-  font-weight: 500;
+.score__kicker {
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: var(--color-fg-muted);
 }
-.metric__pair {
+
+.score__big {
   display: flex;
   align-items: baseline;
   gap: var(--space-3);
+  margin-top: var(--space-3);
   font-family: var(--font-serif);
-  font-size: var(--text-metric);
+  font-size: var(--text-hero);
+  line-height: 0.86;
+  letter-spacing: var(--tracking-display);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+.score__big .ok,
+.score__big .bad {
   font-weight: 500;
+}
+.score__of {
+  font-size: var(--text-h2);
+  letter-spacing: var(--tracking-serif);
+  color: var(--color-fg-muted);
+}
+
+.score__what {
+  margin-top: var(--space-1);
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: var(--text-h2);
+  line-height: 1.1;
+  letter-spacing: var(--tracking-serif);
+}
+
+.score__before {
+  margin-top: var(--space-2);
+  color: var(--color-fg-muted);
+}
+
+.score__facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: auto 0 0;
+  padding-top: var(--space-6);
+}
+.score__facts > div {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-line-strong);
+}
+.score__facts > div + div {
+  padding-left: var(--space-5);
+}
+.score__facts dt {
+  font-size: var(--text-small);
+  line-height: 1.4;
+  color: var(--color-fg-muted);
+}
+.score__facts dd {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin: var(--space-2) 0 0;
+  font-family: var(--font-serif);
+  font-size: var(--text-h2);
   line-height: 1;
   letter-spacing: var(--tracking-serif);
   font-variant-numeric: tabular-nums lining-nums;
 }
-.metric__arrow {
-  align-self: center;
+.score__facts dd .ok,
+.score__facts dd .bad,
+.score__facts dd .warn {
+  font-weight: 500;
+}
+.score__was {
   font-family: var(--font-text);
-  font-size: var(--text-h2);
+  font-size: var(--text-small);
+  letter-spacing: 0;
   color: var(--color-fg-muted);
 }
-.metric__off {
-  color: var(--color-bad);
+
+/* The ledger sits on a white sheet inside the sky block. */
+.ledger {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  margin: var(--space-3);
+  padding: var(--space-5) var(--space-5) var(--space-4);
+  border-radius: var(--radius-input);
+  background: var(--color-raised);
 }
-.metric__on {
+
+.ledger__title {
+  font-size: var(--text-small);
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+}
+
+.ledger__hint {
+  font-weight: 400;
+  color: var(--color-fg-muted);
+}
+
+.ledger__row {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--color-line);
+}
+
+.ledger__side {
+  font-size: var(--text-small);
+  color: var(--color-fg-muted);
+  white-space: nowrap;
+}
+
+.ledger__cells {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  height: 30px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-stamp);
+  border: 1.5px solid currentColor;
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: default;
+  animation: rise var(--dur-state) var(--ease-out) both;
+}
+.cell--good {
   color: var(--color-ok);
+  background: var(--color-raised);
 }
-.metric__note {
+.cell--bad {
+  color: var(--color-on-ink);
+  background: var(--color-bad);
+  border-color: var(--color-bad);
+}
+
+.ledger__key {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: auto;
+  font-size: var(--text-small);
+  color: var(--color-fg-muted);
+}
+.cell--key {
+  min-width: 0;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border-radius: var(--radius-mark);
+  animation: none;
+}
+.ledger__key .cell--good {
+  margin-left: var(--space-3);
+}
+
+.score__source {
+  margin-top: var(--space-3);
   font-size: var(--text-small);
   color: var(--color-fg-muted);
 }
 
-.verdict-line {
-  margin: var(--space-5) 0 var(--space-6);
-  font-size: var(--text-lead);
+.section-head--table {
+  margin-top: var(--space-7);
 }
 
 .table {
@@ -1640,18 +1793,8 @@ main {
     border-left: 0;
     padding-left: 0;
   }
-  .metrics {
+  .score {
     grid-template-columns: 1fr;
-    gap: var(--space-5);
-  }
-  .metric,
-  .metric:first-child {
-    padding: 0;
-  }
-  .metric + .metric {
-    border-left: 0;
-    border-top: 1px solid var(--color-line-strong);
-    padding-top: var(--space-5);
   }
   .page__head {
     flex-direction: column;
@@ -1661,6 +1804,9 @@ main {
     display: block;
     overflow-x: auto;
   }
+  .table td:first-child {
+    min-width: 260px;
+  }
 }
 
 @media (max-width: 640px) {
@@ -1668,6 +1814,7 @@ main {
     --text-display: 36px;
     --text-h2: 26px;
     --text-metric: 48px;
+    --text-hero: 96px;
   }
   .topbar {
     flex-wrap: wrap;
