@@ -23,11 +23,25 @@ Numbers only from RESULTS.md. Facts only from FACTS.md. Replay mode on stage (sa
 | Isn't this CaMeL / FIDES? | Same principle, credited. They block whole flows once untrusted data is in scope; we decide per argument, show evidence lines, and drop in over HTTP. | M2 |
 | What if the attacker rewords or translates? | The verdict never reads the wording: the address still exists only in the email (s7a Hindi is denied). Disguised addresses ("at"/"dot", base64, Kannada digits, invisible characters) are traced back and denied too (s7b–s7e); disguises we don't decode go to approval, never allowed. | M2 |
 | Isn't the agent scripted? | In replay mode the agent's plan is recorded so the demo is reproducible; every gate decision is computed live. Live LLM mode uses <provider/model>. | M1 |
-| False positives? | 0 popups on clean legit tasks, 6/6 legit tasks completed with the shield on (RESULTS.md). | M2 |
-| Does it work with real agents? | Yes: the MCP gateway puts PASSPORT in front of any MCP client, like Claude Desktop, Cursor or VS Code, with no change to the client or the model. In s2 the model obeys the hidden email and PASSPORT refuses the send, quoting line 13 of email #3. It protects only the tools that go through the gateway, and the intent is what the client reports. | M1 |
+| Does it work with real agents? | Yes: the MCP gateway puts PASSPORT in front of any MCP client (Claude Desktop, Cursor, the MCP Inspector) with no change to the client or the model. Claude itself usually refuses our hidden instruction, so the attack is shown with a scripted agent that obeys it; PASSPORT refuses the send quoting line 13 of email #3, and the tool is never called (RESULTS.md "Gateway"). It protects only the tools behind the gateway, and the intent is what the client reports. | M1 |
 | False positives? | 0 popups on clean legit tasks, 7/7 legit tasks completed with the shield on (RESULTS.md). | M2 |
 | What if the user types the attacker's address? | Then it's the user's intent; out of scope, and in our threat model. | M4 |
+| Does this protect Gmail's own Gemini? | No. Google runs those tools; we protect agents whose tools go through PASSPORT. | M1 |
+| What if the user adds the raw email server to Claude directly? | Our fake upstream won't start without a random key only the gateway knows. A different raw server the user adds is outside PASSPORT: a stated limit. | M1 |
+| Real Gmail? | Roadmap: an OAuth connector behind the gateway with a credential vault. Never in the demo; all data is synthetic. | M4 |
 | Where's LangChain? | We didn't need it: the gate is framework-agnostic. Any LangChain/LangGraph/CrewAI agent calls `POST /v1/decide` before a tool. | M1 |
 | Is the data real? | No: synthetic company, `.test` domains, random canary keys, tools act in memory only. | M4 |
 | How is your own app secured? | docs/SECURITY.md: strict validation, security headers, CORS allowlist, rate limits, access code, secrets redacted everywhere, audit hash chain. | M1 |
 | What did AI do? | Claude Code wrote code under our direction; every slice was reviewed and tested (docs/AI-LOG.md). We can explain every part. | all |
+
+## Gateway segment (if the Gateway tab, G3, is on main by the 08:00 go/no-go)
+Opening line: "You don't switch agents. Keep Claude Desktop; PASSPORT checks every tool call it makes."
+It replaces the 1:45–2:25 slot (S5 approval + scoreboard move to Q&A), or runs as a 60-second add-on if time allows. Commands: `integrations/README.md`.
+1. `fooled_agent.py --shield off`: "A gullible agent obeys email #3 and the email goes out. PASSPORT was watching: it says it would have denied it."
+2. `fooled_agent.py` (shield on): "Same agent, same email. DENY R3: the address came from Email #3, line 13. The tool was never called. Priya still gets her summary."
+3. Claude Desktop, legit task, plus one approval from the dashboard: "A real client, unchanged. Every call shows up here, and risky ones wait for a human."
+4. Stop the backend, call a tool: "If PASSPORT can't answer, nothing runs. Fail closed."
+5. Audit tab → Verify chain.
+Numbers on screen: only RESULTS.md (eval table + "Gateway" table). If Claude Desktop is flaky at 08:00: steps 1, 2 and 4 with `fooled_agent.py`, and say so.
+
+Roadmap slide: remote HTTPS gateway with MCP auth · real connectors + credential vault · policy editor · more clients · an SDK.
