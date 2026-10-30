@@ -52,6 +52,7 @@ class Settings:
     llm_model: str | None = None
     llm_timeout_s: int = 30
     allow_live_llm: bool = True
+    record_fixtures: bool = False  # live sessions save their turns to app/fixtures/ for replay
     approval_timeout_s: int = 120
     max_agent_steps: int = 8
     rate_limit_per_min: int = 30
@@ -97,6 +98,7 @@ def load_settings() -> Settings:
         llm_timeout_s=_int("LLM_TIMEOUT_S", 30, 5, 120),
         # Live LLM calls cost money and can be abused on a public URL: off by default in prod.
         allow_live_llm=_bool("ALLOW_LIVE_LLM", app_env != "prod"),
+        record_fixtures=_bool("RECORD_FIXTURES", False),
         approval_timeout_s=_int("APPROVAL_TIMEOUT_S", 120, 5, 600),
         max_agent_steps=_int("MAX_AGENT_STEPS", 8, 1, 20),
         rate_limit_per_min=_int("RATE_LIMIT_PER_MIN", 30, 1, 10_000),

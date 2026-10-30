@@ -30,6 +30,7 @@ export default function App() {
   }, []);
 
   const scenario = scenarios.find((s) => s.id === scenarioId);
+  const runMode = health?.live_llm_available ? mode : "replay"; // never start live on a server without it
   const running = state.status === "starting" || state.status === "running" || state.status === "waiting";
 
   return (
@@ -71,12 +72,12 @@ export default function App() {
             </button>
             <label className="field">
               <span className="sr-only">Mode</span>
-              <select value={mode} onChange={(e) => setMode(e.target.value as "replay" | "live")} disabled={running}>
+              <select value={runMode} onChange={(e) => setMode(e.target.value as "replay" | "live")} disabled={running}>
                 <option value="replay">Replay (recorded agent)</option>
-                <option value="live" disabled={!health?.live_llm_available}>Live LLM{health?.live_llm_available ? "" : " (not configured)"}</option>
+                {health?.live_llm_available && <option value="live">Live LLM</option>}
               </select>
             </label>
-            <button type="button" className="btn btn--brand" disabled={running || !scenario} onClick={() => start({ scenarioId, shieldOn, mode })}>
+            <button type="button" className="btn btn--brand" disabled={running || !scenario} onClick={() => start({ scenarioId, shieldOn, mode: runMode })}>
               {running ? "Running…" : "Run scenario"}
             </button>
           </div>

@@ -6,7 +6,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from app.agent.llm import assistant_message
+from app.agent.llm import LLMError, assistant_message
 from app.agent.prompts import NAIVE_ASSISTANT_PROMPT
 from app.gate.handle import handle
 from app.sessions import Session
@@ -46,6 +46,8 @@ async def run_session(s: Session) -> None:
     try:
         for step in range(1, s.max_steps + 1):
             turn = await s.llm.next_turn(messages, tools, s)
+            if s.recorder:
+                s.recorder.add(turn, s.world)
             await s.emit(
                 "llm_step",
                 {
@@ -62,12 +64,21 @@ async def run_session(s: Session) -> None:
                 result = await handle(s, call.name, call.args, step)
                 messages.append({"role": "tool", "tool_call_id": call.id, "content": result})
         await _finish(s, "done", {"answer": "Stopped: step limit reached."})
+    except LLMError as e:
+        log.warning("session %s: live LLM failed: %s", s.id, e)
+        await _finish(s, "error", {"message": f"The agent stopped: {e}"})
     except Exception as e:  # noqa: BLE001 - never leak a stack trace to the UI
         log.exception("session %s failed", s.id)
         await _finish(s, "error", {"message": f"The agent stopped because of an error ({type(e).__name__})."})
 
 
 async def _finish(s: Session, status: str, data: dict[str, Any]) -> None:
+    if s.recorder:
+        try:
+            path = s.recorder.save(s.id, status)
+            log.info("session %s recorded to %s", s.id, path.name)
+        except OSError:
+            log.exception("session %s: could not save the fixture", s.id)
     s.set_status(status)
     s.audit("session_" + status, data)
     await s.emit(status, data)
