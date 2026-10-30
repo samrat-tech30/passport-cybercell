@@ -4,7 +4,7 @@
 
 **Last updated:** 2026-10-31 03:31 (G1 + G2 + red-team fixes by Person B while Person A was offline; merged to main)
 **Live URLs:** frontend <…> · backend <…>
-**Next task:** Person A → G3 Gateway tab (feat/gateway-ui from main). Person B → G4 (e2e with real uvicorn, integrations/README.md, Claude Desktop retry, RESULTS "Gateway" table). Then G5, E-1. Handoff: see "Handoff 05:30" below.
+**Next task:** Person A → G3 Gateway tab (feat/gateway-ui from main). Person B → Claude Desktop trial with the new gateway (last G4 item), then G5 pitch, E-1. Handoff: see "Handoff 05:30" below.
 
 ## Handoff 05:30 (Person B → Person A)
 - On main: G1 backend gateway API + G2 MCP side. Both checked: backend ruff + 152 tests + eval (9/9 → 0/9 attacks, 7/7 legit, 0 popups) + frontend build + guard hook; `make gateway-test` 17 passed.
@@ -13,6 +13,10 @@
 - Gateway sessions: `GET /sessions/{id}` has `mode: "gateway"`, `agent_name`, `client`; `user_request` is `""` until start_task. New SSE event `gateway_call {decision_id, run, message}`; TS types `GatewaySessionRow`, `GatewayCallEvent` are already in `frontend/src/lib/api/types.ts`.
 - Approvals: `/decide` waits `GATEWAY_APPROVAL_WAIT_S` (default 40) for `POST /approvals/{decision_id}`; `approval_needed` fires on the session's SSE stream like today.
 - Unmerged on purpose (plan: v2 branches stay pushed): `origin/feat/attacks` (s9–s13 attack scenarios), `origin/feat/email-fields` (email header labelling, last commit "red-team contacts (wip)"). Decide at 08:00 go/no-go.
+
+## Done (G4 partly, Person B, feat/gateway-e2e)
+- `integrations/tests/test_e2e.py`: uvicorn on a free port + the gateway over real stdio (4 tests, ~30–36 s on Windows); `integrations/README.md` (setup Win/macOS, Claude Desktop config with no upstream credential, Store-install path, Inspector, demo script, limits); RESULTS.md "Gateway" table from the 21-test run
+- **Left in G4:** try the new gateway in Claude Desktop by hand and write what happened in AI-LOG.md (the V2-E trial is the only one so far); MCP Inspector not run
 
 ## Done (G2 MCP side, Person B, feat/gateway-mcp)
 - `integrations/nimbus_mcp/server.py`: the fake Gmail (World tools over stdio); exits with "only reachable through PASSPORT" unless `NIMBUS_GATEWAY_KEY` ≥ 32 chars
