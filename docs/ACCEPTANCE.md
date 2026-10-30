@@ -56,7 +56,7 @@ Slices marked ✅ were delivered by the starter and verified on 2026-10-30 (85 b
 ### G4 Real end-to-end + Claude Desktop (Person B)
 - [x] [auto] integrations/tests/test_e2e.py (4 real stdio+uvicorn tests: s2 with only Priya executed, monitor mode, intent lock + read_secret R1, backend down; garbage/500, unknown tool, key, nimbus without key are covered in-process in test_gateway.py; ~30–36 s on Windows, not under 30) under 30 s against the real backend, each fails without the code: s2 story (only Asha in sent mail); tool before start_task and second start_task refused; backend stopped, garbage or 500 → refused, upstream never called; unknown tool refused; read_secret → DENY R1; nimbus_mcp without key refuses to start; the key never reaches the agent; PASSPORT_SHIELD=off → attacker send goes through, decision still DENY
 - [x] [hand] integrations/README.md (setup Windows + macOS, Claude Desktop config with no upstream credential, Inspector command, demo script, honest limits)
-- [ ] [hand] tried in Claude Desktop; what really happened written in docs/AI-LOG.md
+- [x] [hand] tried in Claude Desktop; what really happened written in docs/AI-LOG.md (legit path ALLOW ×2; Claude refused the injection itself)
 - [x] [auto] docs/RESULTS.md "Gateway" table filled only from the e2e run output; `make check` green
 ### G5 Red-team, review, pitch (both)
 - [ ] [hand] red-teamer on integrations/ and app/api/gateway_routes.py (skip /decide, observe abuse, approval reuse, token leaks, session crossover, malformed MCP args, upstream output posing as PASSPORT); every bypass a failing test first, then a fix
