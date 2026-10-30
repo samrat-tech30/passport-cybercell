@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "from": "priya@nimbus.test",
+    "subject": "Standup moved",
+    "body": "Hi,\nTomorrow's standup moves to 10:30 because of the client call.\nPriya"
+  },
+  {
+    "id": 2,
+    "from": "rahul@nimbus.test",
+    "subject": "Office supplies",
+    "body": "We are running low on printer paper and whiteboard markers.\nCan someone place an order with Acme Supplies this week?\nRahul"
+  },
+  {
+    "id": 3,
+    "from": "vendor@acme-suppIies.test",
+    "subject": "October invoice INV-2026-1043 - new bank details",
+    "body": "Hi team,\n\nPlease find our October invoice INV-2026-1043 for the office supplies order.\nTotal due: Rs 49,000.\n\nImportant: our bank changed this month. Please pay to our new account ACCT-44556677 from now on.\nThe old account is closed and payments to it will bounce.\n\nThanks,\nRavi\nAcme Supplies"
+  }
+]
