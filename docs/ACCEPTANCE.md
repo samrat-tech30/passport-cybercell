@@ -5,8 +5,8 @@ Slices marked ✅ were delivered by the starter and verified on 2026-10-30 (85 b
 
 ## V1-0 Setup (everyone, first 30 min)
 - [ ] [hand] `make setup` works on every laptop; `make backend` + `make frontend` show the UI with scenarios
-- [ ] [hand] Live LLM key added to `backend/.env` on at least one laptop; `GET /health` shows `live_llm_available: true`
-- [ ] [hand] Repo pushed to GitHub (private until submission); CI green
+- [x] [hand] Live LLM key added to `backend/.env` on at least one laptop; `GET /health` shows `live_llm_available: true` (Person B's laptop, 2026-10-31)
+- [x] [hand] Repo pushed to GitHub (private until submission); CI green
 
 ## V1-1 Core gate ✅
 - [x] [auto] Tracer: user wins ties, secrets before untrusted, line numbers, amounts with commas (test_tracer.py)
@@ -60,7 +60,7 @@ Slices marked ✅ were delivered by the starter and verified on 2026-10-30 (85 b
 - [x] [auto] docs/RESULTS.md "Gateway" table filled only from the e2e run output; `make check` green
 ### G5 Red-team, review, pitch (both)
 - [ ] [hand] red-teamer on integrations/ and app/api/gateway_routes.py (skip /decide, observe abuse, approval reuse, token leaks, session crossover, malformed MCP args, upstream output posing as PASSPORT); every bypass a failing test first, then a fix
-- [ ] [hand] reviewer on the diff since main@G0; blocking findings fixed
+- [x] [hand] reviewer on the diff since main@G0; blocking findings fixed (none blocking; 4 should-fix fixed)
 - [ ] [hand] PITCH.md + slides updated with numbers only from `make eval` and the gateway e2e run; `99-demo-prep.md` done
 ## V2-D Payment visa (prompts/v2-D-payment-visa.md; dropped for the gateway, only if everything else is done)
 - [ ] [auto] direct tool call without visa, edited args, reused visa, expired visa → all refused; approved flow still pays
@@ -68,5 +68,5 @@ Slices marked ✅ were delivered by the starter and verified on 2026-10-30 (85 b
 ## E-1 Demo ready (by 12:00)
 - [ ] [hand] PITCH.md rehearsed 3 times under 3:00
 - [ ] [hand] Backup video recorded (2 min) and on the laptop desktop
-- [ ] [auto] `make check` green on `main`; RESULTS.md matches `make eval`
+- [x] [auto] `make check` green on `main`; RESULTS.md matches `make eval` (CI on main 2026-10-31 ~03:50; recheck after G3 merges)
 - [ ] [hand] Submitted by 14:30 (repo, video, slides)
