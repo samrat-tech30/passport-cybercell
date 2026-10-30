@@ -1,3 +1,5 @@
+> **Superseded by `prompts/GATEWAY-PROMPTS.md`** (slice G0, 2026-10-31). Kept for history; build from GATEWAY-PROMPTS.md.
+
 Slice V2-E: MCP gateway (replaces V2-D). Person B. Start by 04:00 at the latest; if it isn't working by 08:00, cut it and mention it as future work. Use verify-before-use for `fastmcp` (standalone package; server, client, error and elicitation APIs change between versions; read the installed version's docs before writing code). Plan first, wait for my OK.
 
 ## Why

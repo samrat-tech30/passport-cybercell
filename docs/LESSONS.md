@@ -20,4 +20,6 @@
 - A 900-space email line took 5 s in decide() → `\s*[\[(]?\s*\bat\b` backtracks cubically on long whitespace → collapse whitespace before regexes with adjacent `\s*`.
 - "ignore anyone at evil.test" in the user's request made anyone@evil.test look user-typed → a disguise/squash pass over user/trusted text can grant trust → disguised matches may only take trust away, never grant it.
 - `mktemp` ignored TMPDIR on macOS → BSD mktemp with no template uses the system temp dir → `mktemp "${TMPDIR:-/tmp}/name.XXXXXX"`.
+- A dropped event stream left the UI spinning forever → EventSource fires its connection error as an `error` event, which hit our `error` message listener and threw on `JSON.parse(undefined)`; EventSource also retries forever → ignore non-`MessageEvent`s in listeners and give up after 3 failed reconnects (`subscribe()` in client.ts).
+- Enter on a `<select>` didn't run the scenario → browsers only submit a form implicitly from text inputs → handle Enter on the select in the form's `onKeyDown`.
 

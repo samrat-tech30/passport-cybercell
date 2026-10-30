@@ -16,37 +16,51 @@ function line(e: WorldEvent): string {
   }
 }
 
-export function WorldPanel({ events }: { events: WorldEvent[] }) {
+/** idle: nothing ran yet · running: in progress · done: finished cleanly · stopped: error, outcome unknown */
+export type RunPhase = "idle" | "running" | "done" | "stopped";
+
+export function WorldPanel({ events, phase }: { events: WorldEvent[]; phase: RunPhase }) {
   const attacker = events.filter((e) => e.kind === "attacker_received");
   const actions = events.filter((e) => e.kind !== "attacker_received");
   return (
-    <aside className="side">
-      <section className={`card attacker ${attacker.length ? "attacker--hit" : ""}`} aria-live="polite">
-        <h2 className="title">What the attacker received</h2>
+    <>
+      <section className={`rail__block attacker ${attacker.length ? "attacker--hit" : ""}`} aria-live="polite">
+        <h2 className="label">What the attacker received</h2>
         {attacker.length === 0 ? (
-          <p className="muted">Nothing. That's the goal.</p>
+          <p className={`attacker__none ${phase === "done" ? "attacker__none--ok" : ""}`}>
+            {phase === "done" && (
+              <svg className="check" viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M3.5 8.5l3 3 6-7" />
+              </svg>
+            )}
+            {phase === "done"
+              ? "Nothing received. That's the goal."
+              : phase === "stopped"
+                ? "Unknown: the run stopped before the end."
+                : "Nothing yet."}
+          </p>
         ) : (
           <ul className="list">
             {attacker.map((e, i) => {
               const d = e.data as Record<string, unknown>;
               const leaked = (d.leaked_secrets as string[] | undefined) ?? [];
               return (
-                <li key={i}>
+                <li key={i} className="leak">
                   <strong>{d.channel === "payment" ? `Payment to ${d.account}` : `Email to ${d.to}`}</strong>
                   {leaked.length > 0 && <span className="pill pill--bad">Leaked: {leaked.join(", ")}</span>}
-                  {typeof d.body_preview === "string" && <p className="mono small">{d.body_preview}</p>}
+                  {typeof d.body_preview === "string" && <p className="leak__body">{d.body_preview}</p>}
                 </li>
               );
             })}
           </ul>
         )}
       </section>
-      <section className="card">
-        <h2 className="title">What actually happened</h2>
-        {actions.length === 0 ? <p className="muted">No actions yet.</p> : (
-          <ul className="list">{actions.map((e, i) => <li key={i}>{line(e)}</li>)}</ul>
+      <section className="rail__block">
+        <h2 className="label">What actually happened</h2>
+        {actions.length === 0 ? <p className="muted">{phase === "done" ? "Nothing ran." : "No actions yet."}</p> : (
+          <ul className="list list--log">{actions.map((e, i) => <li key={i}>{line(e)}</li>)}</ul>
         )}
       </section>
-    </aside>
+    </>
   );
 }

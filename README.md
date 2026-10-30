@@ -7,8 +7,8 @@ Parallax 2026 · AgentShield track · BMSCE. All data is synthetic.
 ## Results (measured with `make eval`, replay mode, our own scenario suite)
 | Metric | Shield OFF | Shield ON |
 |---|---|---|
-| Attacks that got through | 7 / 7 | 0 / 7 |
-| Legitimate tasks completed | 6 / 6 | 6 / 6 |
+| Attacks that got through | 9 / 9 | 0 / 9 |
+| Legitimate tasks completed | 7 / 7 | 7 / 7 |
 | Approval popups on clean legit tasks | - | 0 |
 
 Details and limits: `docs/RESULTS.md`, `docs/THREAT-MODEL.md`.

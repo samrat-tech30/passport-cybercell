@@ -55,5 +55,46 @@ Event    = {seq, session_id, type, data, ts}
 | `done` | `{answer}` |
 | `error` | `{message}` |
 
+| `gateway_call` | `{decision_id, run, message}` (gateway sessions only, after each `/decide` answer, once any approval wait is over) |
+
 ## Error codes
-`invalid_input` 422 · `payload_too_large` 413 · `rate_limited` 429 · `access_code_required` 401 · `scenario_not_found`, `session_not_found`, `segment_not_found`, `approval_not_pending`, `stream_not_available`, `no_eval_yet` 404 · `scenario_required`, `request_mismatch`, `live_llm_disabled`, `invalid_session` 400 · `internal_error` 500.
+`invalid_input` 422 · `payload_too_large` 413 · `rate_limited` 429 · `access_code_required`, `gateway_unauthorized` 401 · `scenario_not_found`, `session_not_found`, `segment_not_found`, `approval_not_pending`, `stream_not_available`, `no_eval_yet` 404 · `intent_required`, `intent_locked`, `observe_rejected` 409 · `scenario_required`, `request_mismatch`, `live_llm_disabled`, `invalid_session` 400 · `internal_error` 500 · `gateway_disabled` 503.
+
+## Gateway API (for integrations/passport_gateway only)
+The MCP gateway (`prompts/GATEWAY-PROMPTS.md`) puts PASSPORT between an outside agent and an upstream MCP server. The backend decides; the gateway runs the upstream tool only when told `run: true`. Tools never run inside the backend for these sessions.
+
+**Auth (fail closed).**
+- The backend env `PASSPORT_GATEWAY_TOKEN` (≥ 24 chars) switches the gateway API on. If it's unset, **every** `/v1/gateway/*` call (the GET too) returns 503 `gateway_disabled`.
+- Every **POST** under `/v1/gateway/*` needs header `X-Gateway-Token` equal to it, compared with `hmac.compare_digest`. A missing or wrong token gets 401 `gateway_unauthorized`. The 503 check comes before the token check.
+- These POSTs use the gateway token **instead of** `X-Demo-Code`.
+- Rate limit: 300 calls/min per gateway token on all gateway POSTs (429 `rate_limited`). The 30/min per-client limit does not apply, so a normal task never gets a 429 midway.
+- `GET /v1/gateway/sessions` needs no token: it is read by the dashboard, with the same access as `GET /sessions/{id}`.
+
+| Method | Path | Body | Success | Errors |
+|---|---|---|---|---|
+| POST | `/v1/gateway/sessions` | `{agent_name: str ≤ 60, client: str ≤ 60, shield_on: bool = true}` | 201 `{session_id}` | 401, 422, 429, 503 |
+| POST | `/v1/gateway/sessions/{id}/intent` | `{request: str ≤ 2000}` | `{capsule: Capsule}`. Only the first call wins. | 409 `intent_locked` (second call); 404 `session_not_found`; 401, 422, 429, 503 |
+| POST | `/v1/gateway/sessions/{id}/decide` | `{tool: str, args: object}` | `{decision: Decision, run: bool, message: str}` | 409 `intent_required` (no intent yet); 404 `session_not_found`; 401, 413, 422, 429, 503 |
+| POST | `/v1/gateway/sessions/{id}/observe` | `{decision_id, output: str ≤ 20000}` | `{ok: true}` | 409 `observe_rejected`; 404 `session_not_found`; 401, 413, 422, 429, 503 |
+| GET | `/v1/gateway/sessions` | – | `{items: [{session_id, agent_name, client, shield_on, intent, status, counts: {ALLOW, REQUIRE_APPROVAL, DENY}, created_ts}]}` newest first; `intent` is the request text or null | 503 |
+
+`{id}` must be a gateway session. A scenario session id, or an unknown id, gets 404 `session_not_found`.
+
+**`/decide`: when `run` is true.**
+| Verdict | Shield ON | Shield OFF (monitor mode) |
+|---|---|---|
+| ALLOW | `run: true` | `run: true` |
+| DENY | `run: false` | `run: true`; `decision` still shows the DENY that would have happened |
+| REQUIRE_APPROVAL | The request **waits** up to `GATEWAY_APPROVAL_WAIT_S` (default 40; must stay below the MCP client's ~60 s tool timeout, see `docs/API-NOTES.md`) for the dashboard to answer via the existing `POST /approvals/{decision_id}`. Approved → `run: true`. Rejected or timed out → `run: false`. | `run: true` at once, no wait |
+
+- An approval belongs to that one decision with those exact args and can't be reused. The same call again is a new decision and a new approval.
+- After the wait ends, `POST /approvals/{decision_id}` gets 404 `approval_not_pending`.
+- `decision.approval` is filled with `approved` / `rejected` / `timeout`; `decision.executed` equals `run`.
+- `message` is plain words for the agent, e.g. `PASSPORT DENY R3_SINK_UNTRUSTED: …`.
+- Any exception while handling `/decide` → 200 with an R0 DENY decision and `run: false` (fail closed), never a 500 that a caller could misread.
+
+**`/observe`.**
+- Accepted once per decision, and only for a decision of this session whose answer was `run: true`. Anything else (unknown decision, another session's, `run: false`, already observed) gets 409 `observe_rejected`.
+- The output is stored as a segment, so later decisions can trace values to it. Its trust label comes from the tool registry's `output_trust` for that tool name, **never from the caller**. An unknown tool name → `untrusted`.
+
+**Dashboard reuse.** Gateway sessions are normal sessions for `GET /sessions/{id}`, `GET /sessions/{id}/events` (SSE) and `POST /approvals/{id}`. Status is `created` before the intent, then `running` ↔ `waiting_approval`. Events: `session_started`, `capsule` (at intent), `decision`, `approval_needed`, `approval_result`, `gateway_call`.

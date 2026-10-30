@@ -10,45 +10,53 @@ interface Props {
 /** Shows only the risky values and where they came from. Reject has focus; Esc = reject. */
 export function ApprovalDialog({ d, onAnswer }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
+  const reject = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (ref.current && !ref.current.open) ref.current.showModal();
+    reject.current?.focus(); // showModal() focuses the first button (Approve); the safe choice must have focus
   }, []);
   const risky = d.reasons.filter((r) => r.verdict !== "ALLOW");
 
   return (
     <dialog
       ref={ref}
-      className="approval"
+      className="dialog approval"
       aria-labelledby="approval-title"
       onCancel={(e) => {
         e.preventDefault();
         onAnswer(false);
       }}
     >
-      <h2 id="approval-title" className="title">
-        Allow <code>{d.tool}</code>?
+      <p className="eyebrow">Step {d.step} needs you</p>
+      <h2 id="approval-title" className="dialog__title">
+        Allow <code>{d.tool}</code> to run?
       </h2>
-      <ul className="approval__list">
+      <ul className="args approval__list">
         {d.passports.map((p) => (
-          <li key={p.arg} className={`arg origin--${p.origin}`}>
+          <li key={p.arg} className={`arg arg--sink origin--${p.origin}`}>
             <span className="arg__name">{p.arg}</span>
-            <span className="arg__value">{preview(p.value, 60)}</span>
+            <span className="arg__body"><span className="arg__value"><span className="ink">{preview(p.value, 60)}</span></span></span>
             <span className="arg__origin">{whereFrom(p)}</span>
           </li>
         ))}
       </ul>
-      <ul className="approval__why">
-        {risky.map((r, i) => (
-          <li key={i}>{r.message}</li>
-        ))}
-      </ul>
-      <p className="muted small">No answer within 2 minutes counts as no.</p>
+      {risky.length > 0 && (
+        <div className="approval__why">
+          <p className="label">Why you're being asked</p>
+          <ul>
+            {risky.map((r, i) => (
+              <li key={i}>{r.message}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className="approval__actions">
-        <button type="button" className="btn btn--danger" autoFocus onClick={() => onAnswer(false)}>
-          Reject
-        </button>
-        <button type="button" className="btn" onClick={() => onAnswer(true)}>
+        <p className="muted small">No answer within 2 minutes counts as no.</p>
+        <button type="button" className="btn btn--outline" onClick={() => onAnswer(true)}>
           Approve
+        </button>
+        <button ref={reject} type="button" className="btn btn--ink" onClick={() => onAnswer(false)}>
+          Reject
         </button>
       </div>
     </dialog>

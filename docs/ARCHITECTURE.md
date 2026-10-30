@@ -55,6 +55,7 @@ See the table in `.claude/skills/passport-gate/SKILL.md` (R0–R8, plus R11_LOOK
 | Name | Value | Source |
 |---|---|---|
 | Approval timeout | 120 s (`APPROVAL_TIMEOUT_S`) | chosen; no answer = DENY |
+| Gateway approval wait | 40 s (`GATEWAY_APPROVAL_WAIT_S`, 5–55) | below the MCP client's 60 s request timeout (API-NOTES.md); no answer = `run: false` |
 | Agent step limit | 8 (`MAX_AGENT_STEPS`) | chosen |
 | Rate limit | 30 POST/min per client | chosen |
 | Body limit | 64 KB | chosen |
@@ -69,3 +70,38 @@ See the table in `.claude/skills/passport-gate/SKILL.md` (R0–R8, plus R11_LOOK
 | Nobody answers approval | card shows "You didn't answer" | DENY after timeout |
 | Backend restarted mid-run | live stream 404 | session/decisions still readable from SQLite |
 | Backend unreachable | banner "Can't reach the backend at …" | check `VITE_API_URL`, CORS `ALLOWED_ORIGINS` |
+
+## 8. Gateway mode (outside agents, `prompts/GATEWAY-PROMPTS.md`)
+PASSPORT also protects agents we didn't write: Claude Desktop, Cursor, the MCP Inspector, `fooled_agent.py`. They talk MCP to our gateway, which asks the backend before every tool call. A fake upstream MCP server does the work. The dashboard is the control panel.
+```text
+Claude Desktop / Cursor / fooled_agent.py
+        │ MCP (stdio)
+        ▼
+integrations/passport_gateway   (MCP server for the agent + MCP client to upstream)
+        │ HTTPS  /v1/gateway/*  (X-Gateway-Token)
+        ▼
+backend  (engine: tracer, rules, audit, approvals)
+        ▲ SSE
+frontend "Gateway" tab
+
+integrations/passport_gateway ──(only after run=true)──► integrations/nimbus_mcp  (fake Gmail, synthetic World)
+```
+**Start-up.**
+- The gateway makes a random per-run key and launches `nimbus_mcp` as its child process over stdio, with that key in the child's env only. `nimbus_mcp` refuses to start without it, so the agent's config holds no upstream credential.
+- The gateway lists the upstream tools, then `POST /v1/gateway/sessions`.
+- It exposes `start_task` plus every upstream tool to the agent.
+
+**Intent.** `start_task(request)` → `POST …/intent` → the capsule is built from those words (deterministic, as in §2) and a USER segment is added. The first call wins; later calls get `intent_locked`.
+
+**One tool call:**
+1. **decide.** The agent calls `tool(args)`, and the gateway sends `POST …/decide {tool, args}`. The backend runs the same `decide()` as our own agent loop: same tracer, same rules, same audit. REQUIRE_APPROVAL with the shield on → `approval_needed` goes to the dashboard, and the request waits up to `GATEWAY_APPROVAL_WAIT_S`.
+2. **run upstream only if `run=true`.** With `run=false`, the agent gets an MCP tool error (`PASSPORT <VERDICT> <rule_id>: <message>` plus the evidence line) and the upstream tool is never called. With `run=true`, the gateway calls the upstream tool.
+3. **observe.** The gateway sends `POST …/observe {decision_id, output}`. The backend stores the output as a segment. Its trust comes from the registry's `output_trust` for that tool (unknown → untrusted), never from the caller, so the next decision can trace values back to it.
+4. **return.** Only after observe succeeds does the agent see the output.
+
+Any failure → the gateway refuses the call: backend down or timed out, a non-2xx or malformed answer, an unknown tool, an upstream error, or an observe failure. The upstream is not called, or its output is not returned (fail closed).
+
+**Inside the backend.**
+- A gateway session is a normal session with `mode="gateway"`: own segment store, own World (used for redaction, canaries and the vault only, never to run a tool), own event bus. No LLM, no agent loop.
+- So `GET /sessions/{id}`, the SSE stream, approvals and the Audit tab all work unchanged.
+- Shield off (monitor mode): the same decisions are made and shown, but `run` is always true.

@@ -32,6 +32,8 @@
 - Claude Desktop config file: Windows `%APPDATA%\Claude\claude_desktop_config.json`, macOS `~/Library/Application Support/Claude/claude_desktop_config.json`. Shape: `{"mcpServers": {"<name>": {"command": "...", "args": [...], "env": {...}}}}`; absolute paths; fully quit and restart after editing. Logs: Windows `%APPDATA%\Claude\logs`, macOS `~/Library/Logs/Claude`; `mcp-server-<NAME>.log` holds the server's stderr (read https://modelcontextprotocol.io/docs/develop/connect-local-servers, 2026-10-31)
 - Claude Desktop tool-call timeout: **not verified** (no official source found). Assumed ~60 s per GATEWAY-PROMPTS.md, hence GATEWAY_APPROVAL_WAIT_S=40. How to check: an approval that waits 50 s, see whether Claude Desktop gives up.
 - Proposed `integrations/requirements.txt`: `mcp==2.3.0`, `httpx==0.28.1` (same httpx pin as the backend; mcp itself pulls `httpx2`, `uvicorn`, `starlette`).
+## MCP
+- `@modelcontextprotocol/sdk` 1.32.2 (TypeScript, latest on npm 2026-10-31): `DEFAULT_REQUEST_TIMEOUT_MSEC = 60000` in `shared/protocol.js`; `request()` uses `options.timeout ?? 60000` and fails with "Request timed out". Progress notifications reset the timer only if the client passes `resetTimeoutOnProgress: true`. So `GATEWAY_APPROVAL_WAIT_S` must stay well under 60. Which timeout Claude Desktop / Cursor actually pass: not verified yet (read unpkg source, 2026-10-31)
 
 ## External services
 - LLM provider: check with `cd backend && .venv/Scripts/python scripts/llm_probe.py [--base-url --model --key-var]`, then `scripts/live_trials.py s1 --runs 5`.

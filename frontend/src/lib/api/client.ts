@@ -72,15 +72,22 @@ export function subscribe(sessionId: string, onEvent: (e: StreamEvent) => void, 
   const es = new EventSource(`${API_URL}/sessions/${sessionId}/events`);
   const types = ["session_started", "capsule", "llm_step", "decision", "approval_needed", "approval_result",
     "tool_result", "world_event", "done", "error"];
+  let failures = 0; // EventSource retries forever; give up after 3 failed reconnects in a row so the UI never spins
   for (const t of types) {
     es.addEventListener(t, (msg) => {
-      const ev = JSON.parse((msg as MessageEvent).data) as StreamEvent;
+      if (!(msg instanceof MessageEvent)) return; // a connection error also fires "error": handled by onerror below
+      failures = 0;
+      const ev = JSON.parse(msg.data) as StreamEvent;
       onEvent(ev);
       if (t === "done" || t === "error") es.close();
     });
   }
   es.onerror = () => {
-    if (es.readyState === EventSource.CLOSED) onError("Lost the live connection to the backend.");
+    failures += 1;
+    if (es.readyState === EventSource.CLOSED || failures >= 3) {
+      es.close();
+      onError("Lost the live connection to the backend.");
+    }
   };
   return () => es.close();
 }
