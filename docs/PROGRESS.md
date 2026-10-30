@@ -18,7 +18,7 @@
 - New `POST /v1/gateway/sessions/{id}/catalog` (contract v0.3.0): installed tool descriptions → untrusted segments `tool:<name>`; pinned; a changed catalog → 409 `catalog_changed`, audit row, session refuses every call. No frontend change (G3 unaffected)
 - Gateway reports + pins the upstream catalog, re-lists before every call (before /decide), serves only the pinned list; `nimbus_mcp` `NIMBUS_POISON=tool|rugpull`; `fooled_agent.py --story poisoned-tool|rugpull`
 - Live: poisoned-tool → DENY R3 "Tool description: check_spelling … line 3", Priya ALLOW; rug pull → refused. Claude Code trials in AI-LOG (rug pull refused a real agent; poisoned description ignored by Claude itself)
-- 177 backend tests, 27 gateway tests, eval unchanged. Red-teamer on the catalog path: running/see ACCEPTANCE G6
+- Red-teamer on the catalog path: 1 bypass class (13 tests; no call ran without a human yes, but a value hidden outside the description only got an approval, not a DENY). Fixed: every string of a tool definition is labelled, the gateway reports (and only shows) title/annotations/output_schema too and pins them, duplicate names → 422. 196 backend tests, 36 gateway tests, eval unchanged
 
 ## Done (G5 Person B part, fix/gateway-review + feat/gateway-pitch)
 - Reviewer on the whole gateway diff since G0: no blocking issue; 4 should-fix + nits all fixed (approved-call message, gateway cross-checks run vs verdict/shield, gateway sessions never evicted + "session lost" message, pending-approval 500, SSE `gateway_call`, secret segments hidden). 172 backend tests, 23 gateway tests

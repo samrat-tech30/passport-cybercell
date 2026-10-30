@@ -241,7 +241,12 @@ async def catalog(session_id: str, body: CatalogIn) -> dict[str, Any]:
     """The installed server's tools. Their descriptions are untrusted content (tool poisoning); the
     first catalog is pinned, and a different one later (a rug pull) locks the session."""
     s = _session(session_id)
-    tools = [t.model_dump() for t in body.tools]
+    tools = [t.model_dump(exclude_none=True) for t in body.tools]
+    try:
+        for t in tools:
+            _strings(t)  # every part must be labellable before anything is pinned
+    except ValueError as e:
+        raise _err(422, "invalid_input", f"tools: {e}") from e
     sha = catalog_sha(tools)
     if s.gateway_catalog_sha is None:
         s.gateway_catalog = {"server": body.server, "tools": tools}
@@ -266,16 +271,35 @@ def _add_catalog_segments(s: Session) -> None:
         return
     server = s.gateway_catalog["server"]
     for t in s.gateway_catalog["tools"]:
-        lines = [t["description"]]
-        props = t["input_schema"].get("properties") if isinstance(t["input_schema"], dict) else None
-        if isinstance(props, dict):
-            for pname, spec in props.items():
-                desc = spec.get("description", "") if isinstance(spec, dict) else ""
-                lines.append(f"{pname}: {desc}")
-        text = "\n".join(str(x) for x in lines)
+        # The description first (evidence lines point into it), then every other string the agent
+        # is shown: schema enums, defaults, examples, titles, nested and $defs parts, annotations.
+        rest = {k: v for k, v in t.items() if k not in ("name", "description")}
+        text = "\n".join([t["description"], *_strings(rest)])
         s.gate.store.add(
             f"tool:{t['name']}", f"Tool description: {t['name']} (server {server})", Trust.UNTRUSTED, text
         )
+
+
+def _strings(value: Any, max_depth: int = 64) -> list[str]:
+    """Every key and string in a JSON value, depth-first, iterative (no recursion limit to hit).
+    Deeper than max_depth raises ValueError: /catalog refuses it rather than leave a part unlabelled."""
+    out: list[str] = []
+    stack: list[tuple[Any, int]] = [(value, 0)]
+    while stack:
+        v, depth = stack.pop()
+        if depth > max_depth:
+            raise ValueError(f"tool definition nested deeper than {max_depth} levels")
+        if isinstance(v, dict):
+            for k, x in reversed(list(v.items())):
+                stack.append((x, depth + 1))
+                stack.append((str(k), depth + 1))
+        elif isinstance(v, list):
+            stack.extend((x, depth + 1) for x in reversed(v))
+        elif isinstance(v, str):
+            out.append(v)
+        elif v is not None and not isinstance(v, bool):
+            out.append(str(v))
+    return out
 
 
 @router.post("/sessions/{session_id}/observe", dependencies=[Depends(require_gateway_token)])

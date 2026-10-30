@@ -62,7 +62,7 @@ Slices marked ✅ were delivered by the starter and verified on 2026-10-30 (85 b
 - [x] [auto] description value → R3 DENY with `tool:<name>` + line; legit recipient still ALLOW; catalog survives the intent; same catalog idempotent; changed catalog → 409 + session R0; limits 422 (backend/tests/test_gateway_catalog.py)
 - [x] [auto] gateway: poisoned-tool DENY over in-process and real stdio; rug pull refuses every later call, never calls upstream, agent sees only the pinned list; catalog report failing → refused (integrations/tests)
 - [x] [hand] `fooled_agent.py --story poisoned-tool` and `--story rugpull` live; Claude Code trial written in AI-LOG.md
-- [ ] [hand] red-teamer on the catalog path; findings fixed
+- [x] [hand] red-teamer on the catalog path; findings fixed (13 failing tests: values hidden in schema enum/default/examples/titles/nested/$defs, tool title/annotations/output_schema, duplicate names → all labelled or refused; tests in test_redteam_catalog.py ×2)
 ### G5 Red-team, review, pitch (both)
 - [ ] [hand] red-teamer on integrations/ and app/api/gateway_routes.py (skip /decide, observe abuse, approval reuse, token leaks, session crossover, malformed MCP args, upstream output posing as PASSPORT); every bypass a failing test first, then a fix
 - [x] [hand] reviewer on the diff since main@G0; blocking findings fixed (none blocking; 4 should-fix fixed)

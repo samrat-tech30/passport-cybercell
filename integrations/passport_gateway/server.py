@@ -83,7 +83,7 @@ class Gateway:
     ) -> None:
         self.upstream = upstream
         # Pinned at install: the agent only ever sees these definitions (a rug pull can't reach it).
-        self.upstream_tools = {t.name: t for t in upstream_tools if t.name != START_TASK.name}
+        self.upstream_tools = {t.name: shown_tool(t) for t in upstream_tools if t.name != START_TASK.name}
         self.server_name = server_name
         self.pinned_catalog = catalog_of(list(self.upstream_tools.values()))
         self.locked = False  # the upstream changed its tool definitions: refuse everything
@@ -248,13 +248,39 @@ class Gateway:
 
 
 def catalog_of(tools: list[types.Tool]) -> list[dict[str, Any]]:
-    """The upstream's tools as /catalog wants them (contracts/README.md), in a stable order."""
-    out = [
-        {"name": t.name, "description": t.description or "", "input_schema": t.input_schema or {}}
-        for t in tools
-        if t.name != START_TASK.name
-    ]
+    """The upstream's tools as /catalog wants them (contracts/README.md), in a stable order.
+
+    Every field the agent is shown goes in, so PASSPORT labels all of it and a change to any of it
+    is a rug pull. Fields not listed here are stripped before the agent sees the tool (shown_tool)."""
+    out = []
+    for t in tools:
+        if t.name == START_TASK.name:
+            continue
+        entry: dict[str, Any] = {
+            "name": t.name,
+            "description": t.description or "",
+            "input_schema": t.input_schema or {},
+        }
+        if t.title is not None:
+            entry["title"] = t.title
+        if t.annotations is not None:
+            entry["annotations"] = t.annotations.model_dump(mode="json", exclude_none=True)
+        if t.output_schema is not None:
+            entry["output_schema"] = t.output_schema
+        out.append(entry)
     return sorted(out, key=lambda t: t["name"])
+
+
+def shown_tool(t: types.Tool) -> types.Tool:
+    """Only the fields catalog_of reports reach the agent (no icons, _meta, execution hints)."""
+    return types.Tool(
+        name=t.name,
+        title=t.title,
+        description=t.description,
+        input_schema=t.input_schema,
+        output_schema=t.output_schema,
+        annotations=t.annotations,
+    )
 
 
 def _code(body: Any) -> str | None:
