@@ -2,7 +2,7 @@
 
 > Claude: the session-start hook loads this file. Update it at the end of every task (`/checkpoint`, `/handoff`). Keep it under 150 lines; details go to AI-LOG.md.
 
-**Last updated:** 2026-10-31 04:20 (G1 + G2 by Person B while Person A was offline)
+**Last updated:** 2026-10-31 03:31 (G1 + G2 + red-team fixes by Person B while Person A was offline; merged to main)
 **Live URLs:** frontend <…> · backend <…>
 **Next task:** Person A → G3 Gateway tab (feat/gateway-ui from main). Person B → G4 (e2e with real uvicorn, integrations/README.md, Claude Desktop retry, RESULTS "Gateway" table). Then G5, E-1. Handoff: see "Handoff 05:30" below.
 
