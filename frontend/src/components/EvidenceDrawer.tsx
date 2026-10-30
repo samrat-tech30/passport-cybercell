@@ -26,16 +26,17 @@ export function EvidenceDrawer({ sessionId, evidence, onClose }: Props) {
   }, [seg]);
 
   return (
-    <dialog ref={ref} className="drawer" onClose={onClose} aria-labelledby="evidence-title">
+    <dialog ref={ref} className="dialog drawer" onClose={onClose} aria-labelledby="evidence-title">
       <header className="drawer__head">
         <div>
-          <h2 id="evidence-title" className="title">{evidence.source ?? "Source"}</h2>
+          <p className="eyebrow">Evidence</p>
+          <h2 id="evidence-title" className="dialog__title">{evidence.source ?? "Source"}</h2>
           <p className="muted">
-            <code>{evidence.arg}</code> = <code>{evidence.value}</code> was found on line {evidence.line}. This text came from
-            outside, so it can't choose where an action goes.
+            <code>{evidence.arg}</code> = <code className="origin--untrusted"><span className="ink">{evidence.value}</span></code> was found on line{" "}
+            {evidence.line}. This text came from outside, so it can't choose where an action goes.
           </p>
         </div>
-        <button type="button" className="btn btn--quiet" onClick={() => ref.current?.close()} autoFocus>
+        <button type="button" className="btn btn--outline" onClick={() => ref.current?.close()} autoFocus>
           Close
         </button>
       </header>

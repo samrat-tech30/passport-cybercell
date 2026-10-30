@@ -10,7 +10,7 @@
 import { mkdirSync } from 'node:fs';
 
 const argv = process.argv.slice(2);
-const opt = { route: '/', width: 1440, height: 900, run: null, off: false, tab: null, full: false,
+const opt = { route: '/', width: 1440, height: 900, run: null, off: false, tab: null, full: false, theme: null,
   base: 'http://localhost:5173', out: 'screenshots' };
 for (let i = 0; i < argv.length; i++) {
   const a = argv[i];
@@ -35,6 +35,7 @@ const problems = [];
 page.on('console', (m) => { if (m.type() === 'error') problems.push(m.text()); });
 page.on('pageerror', (e) => problems.push(e.message));
 
+if (opt.theme) await page.addInitScript((t) => localStorage.setItem('passport.theme', t), opt.theme);
 await page.goto(opt.base + opt.route);
 await page.waitForSelector('.topbar');
 if (opt.tab) await page.click(`button.tab >> text=${opt.tab[0].toUpperCase()}${opt.tab.slice(1)}`);
@@ -43,11 +44,11 @@ if (opt.run) {
   const on = (await page.getAttribute('[role=switch]', 'aria-checked')) === 'true';
   if (on === opt.off) await page.click('[role=switch]');
   await page.click('text=Run scenario');
-  await page.waitForSelector('p.done, dialog.approval[open], p.error', { timeout: 15000 });
+  await page.waitForSelector('.done, dialog.approval[open], .error', { timeout: 15000 });
 }
 await page.waitForTimeout(400);
 mkdirSync(opt.out, { recursive: true });
-const name = `${opt.out}/${(opt.tab ?? 'agent')}${opt.run ? `-${opt.run}${opt.off ? '-off' : ''}` : ''}-${opt.width}x${opt.height}.png`;
+const name = `${opt.out}/${opt.theme ? opt.theme + '-' : ''}${(opt.tab ?? 'agent')}${opt.run ? `-${opt.run}${opt.off ? '-off' : ''}` : ''}-${opt.width}x${opt.height}.png`;
 await page.screenshot({ path: name, fullPage: Boolean(opt.full) });
 await browser.close();
 console.log(`saved ${name}`);

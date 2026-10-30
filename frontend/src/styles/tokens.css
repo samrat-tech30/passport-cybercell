@@ -1,40 +1,106 @@
 /* Design tokens: the ONLY place raw colours, sizes and motion values live.
    Components use var(--token) through classes in app.css. The guard hook blocks raw hex elsewhere.
-   Dark and calm, readable from the back of a hall on a projector. */
+   System: Sky Ink. White page, near-black ink, Newsreader for headlines, Geist for UI,
+   one blue action per view, one sky block per page, yellow only as a highlighter. */
+
+/* Self-hosted (public/fonts, SIL OFL): no network fonts at the venue. */
+@font-face {
+  font-family: "Geist";
+  src: url("/fonts/Geist-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Geist Mono";
+  src: url("/fonts/GeistMono-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Newsreader";
+  src: url("/fonts/Newsreader-Variable.woff2") format("woff2");
+  font-weight: 200 800;
+  font-display: swap;
+}
+
+/* Layer 1: Sky Ink primitives. Contrast on white in comments (WCAG). */
 :root {
-  /* surfaces */
-  --color-canvas: #0e1014;
-  --color-raised: #161920;
-  --color-sunken: #0a0c0f;
-  --color-line: #272c37;
+  color-scheme: light;
 
-  /* text */
-  --color-fg: #e9ecf2;
-  --color-fg-muted: #a3acbb; /* 7.9:1 on canvas */
+  --sx-page: #ffffff;
+  --sx-ink: #0a0a0a; /* 19.8:1 */
+  --sx-mute: #52525b; /* 7.7:1; 6.0:1 on sky */
+  --sx-subtle: #71717a; /* 4.8:1: on white only, fails on panel/sky */
+  --sx-line: #e4e4e7;
+  --sx-field-line: #d4d4d8;
+  --sx-soft: #f4f4f5;
+  --sx-panel: #eef6ff;
+  --sx-sky: #cfe6ff;
+  --sx-blue: #2563eb; /* 5.2:1; never as text on sky */
+  --sx-blue-hover: #1d4ed8;
+  --sx-ring: #93c5fd;
+  --sx-marker: #ffe45c;
 
-  /* brand: one colour, used for the main action and focus */
-  --color-brand: #6aa9ff;
-  --color-on-brand: #07111f;
+  /* PASSPORT exception (docs/DECISIONS.md): printed-ink verdict colours.
+     Only in stamps, result numbers and yes/no cells. All >= 5:1 on page, panel, sky and marker. */
+  --sx-ink-ok: #166534; /* 7.1:1 */
+  --sx-ink-warn: #92400e; /* 7.1:1 */
+  --sx-ink-bad: #b91c1c; /* 6.5:1 */
+}
 
-  /* verdicts (meaning only) */
-  --color-ok: #3ecf8e;
-  --color-warn: #f5b83d;
-  --color-bad: #ff6b6b;
+/* Layer 2: PASSPORT semantic tokens (what components use). */
+:root {
+  --color-canvas: var(--sx-page);
+  --color-raised: var(--sx-page);
+  --color-sunken: var(--sx-soft);
+  --color-panel: var(--sx-panel);
+  --color-hero: var(--sx-sky);
+  --color-line: var(--sx-line);
+  --color-line-strong: var(--sx-field-line);
 
-  /* origins: where a value was born */
-  --color-origin-user: #6aa9ff;
-  --color-origin-trusted: #a3acbb;
-  --color-origin-untrusted: #ff9f43;
-  --color-origin-secret: #c39bff;
-  --color-origin-invented: #e9ecf2;
+  --color-fg: var(--sx-ink);
+  --color-fg-muted: var(--sx-mute);
+  --color-fg-faint: var(--sx-subtle);
+  --color-on-ink: var(--sx-page);
+
+  --color-brand: var(--sx-blue);
+  --color-brand-hover: var(--sx-blue-hover);
+  --color-on-brand: var(--sx-page);
+  --color-ring: var(--sx-ring);
+  --color-marker: var(--sx-marker);
+
+  --color-ok: var(--sx-ink-ok);
+  --color-warn: var(--sx-ink-warn);
+  --color-bad: var(--sx-ink-bad);
+
+  /* Origins: where a value was born. Colour plus words, never colour alone. */
+  --color-origin-user: var(--sx-panel); /* fill */
+  --color-origin-untrusted: var(--sx-marker); /* highlighter: text you didn't write */
+  --color-origin-secret: var(--sx-ink); /* redaction bar */
+
+  --scrim: color-mix(in srgb, var(--sx-ink) 40%, transparent);
+  --lift-dialog: 0 24px 64px -16px color-mix(in srgb, var(--sx-ink) 30%, transparent);
 
   /* type */
-  --font-text: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
-  --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, ui-monospace, monospace;
-  --text-display: 28px;
-  --text-title: 18px;
-  --text-body: 15px;
+  --font-serif: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --font-text: "Geist", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "Geist Mono", "SFMono-Regular", Consolas, ui-monospace, monospace;
   --text-small: 13px;
+  --text-body: 15px;
+  --text-lead: 17px;
+  --text-code: 14px;
+  --text-title: 22px;
+  --text-dialog: 28px;
+  --text-h2: 32px;
+  --text-numeral: 40px;
+  --text-display: 48px;
+  --text-metric: 64px;
+  --text-hero: 136px; /* the one scoreboard number */
+  --tracking-serif: -0.02em;
+  --tracking-display: -0.028em; /* big serif sizes read loose at -0.02 */
+  --tracking-text: -0.006em; /* Geist at 17px and up */
+  --measure: 64ch;
+  --tracking-caps: 0.12em;
 
   /* space (use only these) */
   --space-1: 4px;
@@ -44,25 +110,30 @@
   --space-5: 24px;
   --space-6: 32px;
   --space-7: 48px;
+  --space-8: 64px;
 
-  /* radius by role */
-  --radius-cell: 6px;
-  --radius-control: 8px;
-  --radius-card: 12px;
+  /* shape: pills for anything you click, 16 for surfaces, 12 for inputs */
+  --radius-pill: 999px;
+  --radius-surface: 16px;
+  --radius-input: 12px;
+  --radius-mark: 3px; /* highlighter and redaction bars */
+  --radius-stamp: 6px; /* a rubber stamp is not a pill */
+  --target: 44px;
 
-  /* elevation (two levels) */
-  --lift-1: 0 1px 0 rgba(255, 255, 255, 0.03), 0 1px 2px rgba(0, 0, 0, 0.4);
-  --lift-2: 0 12px 40px rgba(0, 0, 0, 0.55);
-
-  /* motion */
-  --dur-quick: 180ms;
-  --dur-stamp: 260ms; /* the signature moment: the verdict stamp lands */
-  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* motion: state 200ms, scene 800ms, illustration loops 2.4-5s */
+  --dur-state: 200ms;
+  --dur-scene: 800ms;
+  --dur-loop: 3.6s;
+  --dur-pulse: 2.4s;
+  --delay-stamp: 80ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {
   :root {
-    --dur-quick: 0ms;
-    --dur-stamp: 0ms;
+    --dur-state: 0ms;
+    --dur-scene: 0ms;
+    --delay-stamp: 0ms;
   }
 }
