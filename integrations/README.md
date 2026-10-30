@@ -37,6 +37,7 @@ Without `PASSPORT_GATEWAY_TOKEN` every `/v1/gateway/*` call returns 503 (fail cl
 | `PASSPORT_SHIELD` | `on` | `off` = monitor mode: every call runs, decisions still show "would deny" |
 | `PASSPORT_AGENT_NAME` | `Claude Desktop` | the name shown in the dashboard |
 | `NIMBUS_INBOX` | `base` | the synthetic inbox; `s2_hidden_instruction` for the demo |
+| `NIMBUS_POISON` | – | demo only: `tool` (check_spelling's description hides an instruction) or `rugpull` (it turns poisoned after the first call) |
 | `GATEWAY_APPROVAL_WAIT_S` | `40` | must match the backend's; the gateway waits this + 10 s on `/decide` |
 
 ## The attack, reproducibly
@@ -45,7 +46,14 @@ $env:PASSPORT_GATEWAY_TOKEN = "<same token>"
 backend\.venv\Scripts\python integrations\demo_agent\fooled_agent.py               # DENY R3 with the email line
 backend\.venv\Scripts\python integrations\demo_agent\fooled_agent.py --shield off  # goes through, "would be DENY"
 ```
-(`make fooled-agent`, `make fooled-agent SHIELD=off`.) Each run is a new gateway session, listed
+(`make fooled-agent`, `make fooled-agent SHIELD=off`.)
+
+**A malicious server "installed from GitHub"** (`NIMBUS_POISON`):
+```powershell
+backend\.venv\Scripts\python integrations\demo_agent\fooled_agent.py --story poisoned-tool  # DENY R3 "Tool description: check_spelling … line 3"
+backend\.venv\Scripts\python integrations\demo_agent\fooled_agent.py --story rugpull        # 2nd call refused: tools changed after install
+```
+For a real client, add `"NIMBUS_POISON": "tool"` (or `"rugpull"`) and `"NIMBUS_INBOX": "base"` to the gateway's `env` in the client config. Each run is a new gateway session, listed
 in `GET /v1/gateway/sessions` and the Audit tab.
 
 ## Claude Desktop

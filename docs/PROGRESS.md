@@ -14,6 +14,12 @@
 - Approvals: `/decide` waits `GATEWAY_APPROVAL_WAIT_S` (default 40) for `POST /approvals/{decision_id}`; `approval_needed` fires on the session's SSE stream like today.
 - Unmerged on purpose (plan: v2 branches stay pushed): `origin/feat/attacks` (s9–s13 attack scenarios), `origin/feat/email-fields` (email header labelling, last commit "red-team contacts (wip)"). Decide at 08:00 go/no-go.
 
+## Done (G6 poisoned MCP tool + rug pull, Person B, feat/poisoned-tool)
+- New `POST /v1/gateway/sessions/{id}/catalog` (contract v0.3.0): installed tool descriptions → untrusted segments `tool:<name>`; pinned; a changed catalog → 409 `catalog_changed`, audit row, session refuses every call. No frontend change (G3 unaffected)
+- Gateway reports + pins the upstream catalog, re-lists before every call (before /decide), serves only the pinned list; `nimbus_mcp` `NIMBUS_POISON=tool|rugpull`; `fooled_agent.py --story poisoned-tool|rugpull`
+- Live: poisoned-tool → DENY R3 "Tool description: check_spelling … line 3", Priya ALLOW; rug pull → refused. Claude Code trials in AI-LOG (rug pull refused a real agent; poisoned description ignored by Claude itself)
+- 177 backend tests, 27 gateway tests, eval unchanged. Red-teamer on the catalog path: running/see ACCEPTANCE G6
+
 ## Done (G5 Person B part, fix/gateway-review + feat/gateway-pitch)
 - Reviewer on the whole gateway diff since G0: no blocking issue; 4 should-fix + nits all fixed (approved-call message, gateway cross-checks run vs verdict/shield, gateway sessions never evicted + "session lost" message, pending-approval 500, SSE `gateway_call`, secret segments hidden). 172 backend tests, 23 gateway tests
 - PITCH.md: "Gateway segment" (5 steps, for the 08:00 go/no-go), judge Q&A (Gemini, raw server, real Gmail), stale 6/6 row removed. Slides not touched
