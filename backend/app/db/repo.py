@@ -35,12 +35,69 @@ def set_session_capsule(session_id: str, capsule: dict[str, Any]) -> None:
         c.execute("UPDATE sessions SET capsule_json = ? WHERE id = ?", (json.dumps(capsule), session_id))
 
 
+def create_gateway_session(session_id: str, agent_name: str, client: str, shield_on: bool) -> None:
+    """A gateway session: no request until the agent calls start_task (stored as "")."""
+    with tx() as c:
+        c.execute(
+            "INSERT INTO sessions (id, created_at, scenario_id, user_request, shield_on, mode, status) "
+            "VALUES (?, ?, NULL, '', ?, 'live', 'created')",
+            (session_id, time.time(), int(shield_on)),
+        )
+        c.execute(
+            "INSERT INTO gateway_sessions (session_id, agent_name, client) VALUES (?, ?, ?)",
+            (session_id, agent_name, client),
+        )
+
+
+def set_session_request(session_id: str, user_request: str) -> None:
+    with tx() as c:
+        c.execute("UPDATE sessions SET user_request = ? WHERE id = ?", (user_request, session_id))
+
+
+def list_gateway_sessions(limit: int = 50) -> list[dict[str, Any]]:
+    rows = query(
+        "SELECT s.id, s.created_at, s.user_request, s.shield_on, s.status, g.agent_name, g.client, "
+        "SUM(d.verdict = 'ALLOW') AS n_allow, SUM(d.verdict = 'REQUIRE_APPROVAL') AS n_ask, "
+        "SUM(d.verdict = 'DENY') AS n_deny "
+        "FROM gateway_sessions g JOIN sessions s ON s.id = g.session_id "
+        "LEFT JOIN decisions d ON d.session_id = s.id "
+        "GROUP BY s.id ORDER BY s.created_at DESC LIMIT ?",
+        (limit,),
+    )
+    return [
+        {
+            "session_id": r["id"],
+            "agent_name": r["agent_name"],
+            "client": r["client"],
+            "shield_on": bool(r["shield_on"]),
+            "intent": r["user_request"] or None,
+            "status": r["status"],
+            "counts": {
+                "ALLOW": r["n_allow"] or 0,
+                "REQUIRE_APPROVAL": r["n_ask"] or 0,
+                "DENY": r["n_deny"] or 0,
+            },
+            "created_ts": r["created_at"],
+        }
+        for r in rows
+    ]
+
+
 def get_session(session_id: str) -> dict[str, Any] | None:
-    rows = query("SELECT * FROM sessions WHERE id = ?", (session_id,))
+    rows = query(
+        "SELECT s.*, g.agent_name, g.client FROM sessions s "
+        "LEFT JOIN gateway_sessions g ON g.session_id = s.id WHERE s.id = ?",
+        (session_id,),
+    )
     if not rows:
         return None
     r = dict(rows[0])
     r["shield_on"] = bool(r["shield_on"])
+    if r["agent_name"] is not None:
+        r["mode"] = "gateway"
+    else:
+        r.pop("agent_name")
+        r.pop("client")
     r["capsule"] = json.loads(r.pop("capsule_json")) if r.get("capsule_json") else None
     return r
 
@@ -142,4 +199,5 @@ def clear_demo_data() -> None:
     with tx() as c:
         c.execute("DELETE FROM world_events")
         c.execute("DELETE FROM decisions")
+        c.execute("DELETE FROM gateway_sessions")
         c.execute("DELETE FROM sessions")

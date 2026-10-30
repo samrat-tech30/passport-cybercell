@@ -10,8 +10,13 @@ flowchart LR
   TOOLS -- "output labelled untrusted" --> GATE
   GATE --> DB[("SQLite: sessions, decisions,<br/>world_events, audit_log (hash chain), eval_runs")]
   EXT["Any other agent framework"] -- "POST /v1/decide" --> GATE
+  MCPC["MCP client<br/>Claude Desktop · Cursor · Inspector"] -- "stdio / HTTP" --> GW["MCP gateway<br/>(integrations/passport_gateway)"]
+  GW -- "POST /v1/gateway/*" --> GATE
+  GW -- "only after run=true" --> NIM["nimbus_mcp (child, random key)"]
 ```
 The agent never touches a tool directly. There is no path from the agent to a tool except `gate/handle.py`.
+
+**MCP gateway** (`integrations/passport_gateway/server.py`, outside `backend/app`): an MCP server for the agent (upstream tools + `start_task`) and an MCP client to `integrations/nimbus_mcp` (the fake Gmail, started as a child with a random key). Each call: `/v1/gateway/sessions/{id}/decide` → upstream only if `run=true` → `/observe` → output to the agent. Details in §8.
 
 ## 2. One request, step by step
 1. `POST /sessions` → `sessions.create_session()` builds the world, the **segment store** (user text = USER, vendor registry = TRUSTED, vault canaries = hidden SECRET) and the **intent capsule** from the user's words only (`gate/capsule.py`).
@@ -84,7 +89,7 @@ integrations/passport_gateway ──(only after run=true)──► integrations/
 ```
 **Start-up.**
 - The gateway makes a random per-run key and launches `nimbus_mcp` as its child process over stdio, with that key in the child's env only. `nimbus_mcp` refuses to start without it, so the agent's config holds no upstream credential.
-- The gateway lists the upstream tools, then `POST /v1/gateway/sessions`.
+- The gateway lists the upstream tools. `POST /v1/gateway/sessions` happens on the agent's first tool call (then the client's name from `initialize` is known, and a backend that is down at start-up doesn't kill the gateway; the call is just refused).
 - It exposes `start_task` plus every upstream tool to the agent.
 
 **Intent.** `start_task(request)` → `POST …/intent` → the capsule is built from those words (deterministic, as in §2) and a USER segment is added. The first call wins; later calls get `intent_locked`.

@@ -57,6 +57,9 @@ class Settings:
     max_agent_steps: int = 8
     rate_limit_per_min: int = 30
     max_body_bytes: int = 64_000
+    gateway_token: str | None = field(default=None, repr=False)  # unset = gateway API off (503)
+    gateway_approval_wait_s: int = 40  # below the MCP client's ~60 s tool timeout
+    gateway_rate_limit_per_min: int = 300
 
     @property
     def db_path(self) -> Path:
@@ -87,6 +90,10 @@ def load_settings() -> Settings:
     if code is not None and len(code) < 6:
         raise ConfigError("DEMO_ACCESS_CODE must be at least 6 characters (or unset)")
 
+    gateway_token = os.environ.get("PASSPORT_GATEWAY_TOKEN") or None
+    if gateway_token is not None and len(gateway_token) < 24:
+        raise ConfigError("PASSPORT_GATEWAY_TOKEN must be at least 24 characters (or unset)")
+
     return Settings(
         app_env=app_env,
         data_dir=data_dir,
@@ -103,6 +110,8 @@ def load_settings() -> Settings:
         max_agent_steps=_int("MAX_AGENT_STEPS", 8, 1, 20),
         rate_limit_per_min=_int("RATE_LIMIT_PER_MIN", 30, 1, 10_000),
         max_body_bytes=_int("MAX_BODY_BYTES", 64_000, 1_000, 1_000_000),
+        gateway_token=gateway_token,
+        gateway_approval_wait_s=_int("GATEWAY_APPROVAL_WAIT_S", 40, 1, 55),
     )
 
 

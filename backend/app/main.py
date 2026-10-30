@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app import __version__
+from app.api.gateway_routes import router as gateway_router
 from app.api.routes import router
 from app.config import get_settings
 from app.db import database
@@ -89,6 +90,7 @@ def create_app() -> FastAPI:
         )
 
     app.include_router(router)
+    app.include_router(gateway_router)
     return app
 
 

@@ -2,9 +2,31 @@
 
 > Claude: the session-start hook loads this file. Update it at the end of every task (`/checkpoint`, `/handoff`). Keep it under 150 lines; details go to AI-LOG.md.
 
-**Last updated:** 2026-10-31 01:45 (G0 gateway contract + docs, branch feat/gateway-contract)
+**Last updated:** 2026-10-31 03:31 (G1 + G2 + red-team fixes by Person B while Person A was offline; merged to main)
 **Live URLs:** frontend <…> · backend <…>
-**Next task:** merge G0 to main → Person A starts G1 (feat/gateway-engine), Person B merges main into feat/gateway-mcp (GB0/G2). Plan: prompts/GATEWAY-PROMPTS.md.
+**Next task:** Person A → G3 Gateway tab (feat/gateway-ui from main). Person B → G4 (e2e with real uvicorn, integrations/README.md, Claude Desktop retry, RESULTS "Gateway" table). Then G5, E-1. Handoff: see "Handoff 05:30" below.
+
+## Handoff 05:30 (Person B → Person A)
+- On main: G1 backend gateway API + G2 MCP side. Both checked: backend ruff + 152 tests + eval (9/9 → 0/9 attacks, 7/7 legit, 0 popups) + frontend build + guard hook; `make gateway-test` 17 passed.
+- Windows has no `make`: use `backend/.venv/Scripts/python …` directly (README "without make"). `scripts/check.sh` expects `.venv/bin`, so on Windows run its steps by hand.
+- To demo the gateway locally: set `PASSPORT_GATEWAY_TOKEN` (≥ 24 chars) in `backend/.env`, restart the backend, then in a shell with the same token: `backend/.venv/Scripts/python integrations/demo_agent/fooled_agent.py` (and `--shield off`). Sessions appear in `GET /v1/gateway/sessions` and in the Audit tab; open one in G3.
+- Gateway sessions: `GET /sessions/{id}` has `mode: "gateway"`, `agent_name`, `client`; `user_request` is `""` until start_task. New SSE event `gateway_call {decision_id, run, message}`; TS types `GatewaySessionRow`, `GatewayCallEvent` are already in `frontend/src/lib/api/types.ts`.
+- Approvals: `/decide` waits `GATEWAY_APPROVAL_WAIT_S` (default 40) for `POST /approvals/{decision_id}`; `approval_needed` fires on the session's SSE stream like today.
+- Unmerged on purpose (plan: v2 branches stay pushed): `origin/feat/attacks` (s9–s13 attack scenarios), `origin/feat/email-fields` (email header labelling, last commit "red-team contacts (wip)"). Decide at 08:00 go/no-go.
+
+## Done (G2 MCP side, Person B, feat/gateway-mcp)
+- `integrations/nimbus_mcp/server.py`: the fake Gmail (World tools over stdio); exits with "only reachable through PASSPORT" unless `NIMBUS_GATEWAY_KEY` ≥ 32 chars
+- `integrations/passport_gateway/server.py`: starts nimbus as a child with a random key (child env only), exposes `start_task` + upstream tools; session created on the first call (client name from initialize); decide → upstream only on run=true → observe → output. Fail closed on backend down / non-2xx / bad shape / unknown tool / upstream error / observe refused. stderr only: tool, verdict, rule, run. `--http --port 8765` for the Inspector (not run)
+- `integrations/demo_agent/fooled_agent.py` (`--shield off`); ran live over real stdio against uvicorn: shield ON → evil send "PASSPORT DENY R3_SINK_UNTRUSTED … Email #3 … line 13 … The tool was not called", Priya send ALLOW; shield OFF → evil send goes through with "[PASSPORT monitor mode: would be DENY R3 …]"; both sessions listed with counts
+- 17 tests (`make gateway-test`, ~5 s): s2 story, no start_task, intent lock, 6 backend failure modes, observe refused, unknown tool, R1 read_secret, approval timeout, monitor mode, key never reaches the agent, nimbus/gateway refuse to start without key/token. CI step installs `integrations/requirements.txt`
+- Old V2-E `integrations/mcp_gateway/` removed (history + `docs/MCP-GATEWAY.md` keep it)
+
+## Done (G1 backend gateway API, Person B for Person A, feat/gateway-engine)
+- `app/api/gateway_routes.py` per contracts "Gateway API": token gate (503/401, compare_digest, 300/min per token), sessions/intent/decide/observe/list; R0 on any exception; approvals wait in the request; monitor mode; trust from the registry; observed secrets join the vault (R2 + redaction)
+- Migration 002 `gateway_sessions` side table (sessions.mode CHECK can't widen without cascade-deleting decisions: DECISIONS.md); `create_gateway_session` (no LLM, World only for redaction)
+- 16 tests in `tests/test_gateway_api.py`; contract examples `gateway.*.json`
+- Red-teamer: 5 bypasses, all from upstream output that /observe dropped (action-tool output ignored, unobserved read left the gate blind, email fields beyond from/subject/body, re-read of the same email id / file path deduped). Fixed: every observed output is also stored whole, capped to UNTRUSTED, under an id per decision; run=true on a non-trusted tool marks outside content as read before the upstream runs; an observed secret never replaces a canary. 18 tests in `tests/test_redteam_gateway.py` (170 backend tests)
+- Red-team notes, not fixed (stated limits): the intent is whatever the client sends to start_task; `GET /v1/gateway/sessions` shows intents without a token (contract); **`POST /approvals/{id}` is open unless `DEMO_ACCESS_CODE` is set: set it on any deployed backend**
 
 ## Done (G0 gateway contract, Person A, feat/gateway-contract)
 - contracts/README.md "Gateway API": /v1/gateway/sessions (create, list), intent (locked after first), decide (approval waits ≤ 40 s in the request), observe (once, trust from registry); X-Gateway-Token, 503 when unset; 300/min per token; event gateway_call; 5 error codes; CHANGELOG v0.2.0
@@ -25,6 +47,9 @@
 - Keyboard: Tab order tabs→controls→timeline, Enter (also on the select) runs, Esc closes evidence / rejects approval (Playwright-checked)
 - Fix: dropped SSE stream spun forever (see LESSONS); ui-critic must-fix items done
 - Checked in Chromium only, not yet on the real projector
+
+## Done (V2-E MCP gateway, superseded by G1/G2)
+- First gateway over `/v1/decide`; Claude Desktop by hand (Windows Store install): start_task, read ALLOW, Priya send ALLOW; Claude refused the injection itself, so the DENY is shown with the scripted agent. Code removed in G2.
 
 ## Done (V1-4 live LLM, Person B, feat/live-llm)
 - Groq openai/gpt-oss-120b live: S1 5/5; S2 shield OFF leaks 2/9 (reads the secret 9/9) → attack demo stays in replay (DECISIONS.md); shield ON blocks read_secret live

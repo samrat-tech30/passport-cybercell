@@ -1,0 +1,34 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/v1/gateway/sessions/ses_0123456789/decide",
+    "body": {
+      "tool": "list_unread_emails",
+      "args": {}
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "decision": {
+        "id": "dec_0123456789",
+        "session_id": "ses_0123456789",
+        "step": 1,
+        "tool": "list_unread_emails",
+        "args": {},
+        "verdict": "ALLOW",
+        "rule_id": "ALLOW",
+        "message": "Every value traced to you or a trusted source.",
+        "risk": 0,
+        "reasons": [],
+        "passports": [],
+        "shield_on": true,
+        "executed": true,
+        "approval": null,
+        "ts": 1793370000.0
+      },
+      "run": true,
+      "message": "PASSPORT ALLOW: the call may run."
+    }
+  }
+}

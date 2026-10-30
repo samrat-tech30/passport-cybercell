@@ -1,0 +1,18 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/v1/gateway/sessions/ses_0123456789/intent",
+    "body": {
+      "request": "Summarise my unread emails and send the summary to priya@nimbus.test"
+    }
+  },
+  "response": {
+    "status": 409,
+    "body": {
+      "error": {
+        "code": "intent_locked",
+        "message": "The intent of this session is already locked."
+      }
+    }
+  }
+}

@@ -32,6 +32,17 @@ cd frontend; npm install; copy .env.example .env.local; npm run dev           # 
 cd backend; .venv\Scripts\pytest; .venv\Scripts\python -m app.eval_runner     # tests, eval
 ```
 
+### MCP gateway (protect an outside agent such as Claude Desktop)
+Set `PASSPORT_GATEWAY_TOKEN` (24+ characters) in `backend/.env` and restart the backend. Then, in a shell with the same token:
+```powershell
+backend\.venv\Scripts\pip install -r integrations\requirements.txt
+$env:PASSPORT_GATEWAY_TOKEN = "<same token>"
+backend\.venv\Scripts\python integrations\demo_agent\fooled_agent.py              # attack DENY, legit ALLOW
+backend\.venv\Scripts\python integrations\demo_agent\fooled_agent.py --shield off # monitor mode
+cd integrations; ..\backend\.venv\Scripts\python -m pytest tests -q               # gateway tests
+```
+With make: `make fooled-agent`, `make fooled-agent SHIELD=off`, `make gateway-test`. Design: `docs/ARCHITECTURE.md` §8.
+
 ## Repo map
 | Path | What |
 |---|---|

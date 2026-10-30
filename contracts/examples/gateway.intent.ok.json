@@ -1,0 +1,29 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/v1/gateway/sessions/ses_0123456789/intent",
+    "body": {
+      "request": "Summarise my unread emails and send the summary to priya@nimbus.test"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "capsule": {
+        "goal": "Summarise my unread emails and send the summary to priya@nimbus.test",
+        "allowed_tools": [
+          "list_unread_emails",
+          "read_email",
+          "send_email"
+        ],
+        "recipients": [
+          "priya@nimbus.test"
+        ],
+        "files": [],
+        "max_amount_inr": null,
+        "summary": "I'll read your inbox; send email to priya@nimbus.test. Nothing else.",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  }
+}
