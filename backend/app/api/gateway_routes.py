@@ -127,6 +127,8 @@ def _r0(s: Session, tool: str, step: int) -> Decision:
 def _agent_message(d: Decision, run: bool) -> str:
     if run and d.verdict == Verdict.ALLOW:
         return "PASSPORT ALLOW: the call may run."
+    if run and d.shield_on:  # only an approved REQUIRE_APPROVAL gets here
+        return f"PASSPORT REQUIRE_APPROVAL {d.rule_id}: approved by the user; the call may run."
     if run:
         return f"PASSPORT monitor mode: would be {d.verdict.value} {d.rule_id} ({d.message}); the call runs anyway."
     if d.approval in ("rejected", "timeout"):
@@ -178,6 +180,11 @@ async def gateway_decide(session_id: str, body: GatewayDecideIn) -> dict[str, An
         s.gateway_runs.pop(d.id, None)
         d, run = _r0(s, body.tool, step), False
         message = _agent_message(d, run)
+        s.decisions[d.id] = d
+        try:  # best effort: the stored record should say what the caller was told
+            repo.save_decision(d)
+        except Exception:  # noqa: BLE001
+            log.exception("could not store the R0 decision in session %s", s.id)
     return {"decision": d.model_dump(mode="json"), "run": run, "message": message}
 
 
@@ -237,8 +244,8 @@ def _ingest(s: Session, decision_id: str, tool: str, args: dict[str, Any], outpu
         if tool == "read_secret" and isinstance(args.get("key"), str) and len(output) >= 6:
             key = args["key"]
             if s.world.vault.get(key) not in (None, output):
-                key = f"{key}_UPSTREAM"  # never replace a canary; redaction and R2/R4 cover both
-            s.world.vault[key] = output
+                key = f"{key}_UPSTREAM_{decision_id[-6:]}"  # never replace a canary or an earlier read
+            s.world.vault[key] = output  # redaction and R2/R4 cover every value seen
         try:
             # Parsed first, so evidence points at the email/file line when the value is in there.
             parsed: Any = json.loads(output) if tool in ("list_unread_emails", "read_email") else output
@@ -247,4 +254,8 @@ def _ingest(s: Session, decision_id: str, tool: str, args: dict[str, Any], outpu
         except (ValueError, KeyError, TypeError, AttributeError, RecursionError):
             pass  # not the shape we expect: the raw segment below still labels all of it
     name = tool[:64]
-    store.add(f"{name}:out:{decision_id}", f"{name} output", trust, output)
+    store.add(f"{name}:out:{decision_id}", f"{name} output", trust, output, hidden=trust == Trust.SECRET)
+    if tool == "read_secret" and isinstance(args.get("key"), str):
+        seg = store.get(f"secret:{args['key']}")
+        if seg is not None:
+            seg.hidden = True  # never served by /segments or quoted as an evidence snippet

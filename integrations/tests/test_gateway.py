@@ -243,3 +243,31 @@ def test_nimbus_refuses_to_start_without_the_key():
 def test_gateway_refuses_to_start_without_a_token_and_keeps_stdout_clean():
     r = _run(ROOT / "integrations" / "passport_gateway" / "server.py", {})
     assert r.returncode == 2 and r.stdout == "" and "PASSPORT_GATEWAY_TOKEN" in r.stderr
+
+
+def _deny_but_run(req):
+    if req.url.path.endswith("/sessions"):
+        return httpx.Response(201, json={"session_id": "ses_x"})
+    if req.url.path.endswith("/intent"):
+        return httpx.Response(200, json={"capsule": {"summary": "x"}})
+    decision = {"id": "dec_x", "verdict": "DENY", "rule_id": "R3_SINK_UNTRUSTED", "shield_on": True}
+    return httpx.Response(200, json={"decision": decision, "run": True, "message": "PASSPORT DENY"})
+
+
+async def test_a_self_contradicting_answer_never_runs_the_tool():
+    async with Rig(transport=httpx.MockTransport(_deny_but_run)) as rig:
+        await rig.call("start_task", {"request": S2})
+        err, text = await rig.call("send_email", ATTACK)
+        assert err and "failing closed" in text
+    assert rig.upstream.calls == []
+
+
+async def test_a_lost_session_says_so_and_fails_closed():
+    async with Rig() as rig:
+        await rig.call("start_task", {"request": S2})
+        from app.sessions import SESSIONS
+
+        SESSIONS.clear()  # as after POST /admin/reset or a restart
+        err, text = await rig.call("list_unread_emails")
+        assert err and "session lost" in text
+    assert rig.upstream.calls == []
