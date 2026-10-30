@@ -4,7 +4,16 @@
 
 **Last updated:** 2026-10-30 22:45 IST (V1-4 live LLM)
 **Live URLs:** frontend <…> · backend <…>
-**Next task:** merge V1-4; teammates pull main. Live demo: S1 live, S2 OFF in replay, S2 ON live or replay.
+**Next task:** projector check of V1-3 polish on the venue screen, then merge feat/ui-polish; merge V1-4; teammates pull main. Live demo: S1 live, S2 OFF in replay, S2 ON live or replay.
+
+## Done (V1-3 polish, Person B, feat/ui-polish)
+- Look: self-hosted Geist/Geist Mono, warm graphite tokens, CSS-only motion (card enter, stamp spring, dialogs, tab plate, count-up), WebGPU guilloché seal in idle state (2D fallback; Chrome on the Core Ultra laptop uses WebGPU)
+- Projector 1280×720: left column collapses to a one-line strip; topbar fits one row; step 3 of S2 starts above the fold
+- States: backend-down banner + Retry (controls disabled), session error card + Run again, attacker panel says "Nothing received" only after a finished run, run-finished counts, rejected approvals stamped REJECTED + "Agent claimed:"
+- Cards: values clamp with "Show full value", sink args loud / subject+body quiet, evidence button pinned right; origin legend; scoreboard sentence from API numbers
+- Keyboard: Tab order tabs→controls→timeline, Enter (also on the select) runs, Esc closes evidence / rejects approval (Playwright-checked)
+- Fix: dropped SSE stream spun forever (see LESSONS); ui-critic must-fix items done
+- Checked in Chromium only, not yet on the real projector
 
 ## Done (V1-4 live LLM, Person B, feat/live-llm)
 - Groq openai/gpt-oss-120b live: S1 5/5; S2 shield OFF leaks 2/9 (reads the secret 9/9) → attack demo stays in replay (DECISIONS.md); shield ON blocks read_secret live

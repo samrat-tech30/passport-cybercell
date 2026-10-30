@@ -16,3 +16,5 @@
 "`.
 - `scripts/check.sh` fails on Windows (`.venv/bin` doesn't exist; it's `.venv/Scripts`) → run its steps by hand with `Scripts/` paths.
 - No `sqlite3` CLI on most laptops (Windows) → tamper demo is a Python script: `make tamper`.
+- A dropped event stream left the UI spinning forever → EventSource fires its connection error as an `error` event, which hit our `error` message listener and threw on `JSON.parse(undefined)`; EventSource also retries forever → ignore non-`MessageEvent`s in listeners and give up after 3 failed reconnects (`subscribe()` in client.ts).
+- Enter on a `<select>` didn't run the scenario → browsers only submit a form implicitly from text inputs → handle Enter on the select in the form's `onKeyDown`.

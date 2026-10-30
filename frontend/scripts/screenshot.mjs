@@ -43,7 +43,7 @@ if (opt.run) {
   const on = (await page.getAttribute('[role=switch]', 'aria-checked')) === 'true';
   if (on === opt.off) await page.click('[role=switch]');
   await page.click('text=Run scenario');
-  await page.waitForSelector('p.done, dialog.approval[open], p.error', { timeout: 15000 });
+  await page.waitForSelector('.done, dialog.approval[open], .error', { timeout: 15000 });
 }
 await page.waitForTimeout(400);
 mkdirSync(opt.out, { recursive: true });
