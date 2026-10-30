@@ -25,8 +25,8 @@ Slices marked ✅ were delivered by the starter and verified on 2026-10-30 (85 b
 - [ ] [hand] Backend-down state shows a readable banner
 
 ## V1-4 Live LLM (M1)
-- [ ] [hand] Chosen provider + model call tools reliably for S1 (5 runs in a row)
-- [ ] [hand] With the shield OFF, the live model falls for S2 at least once in 3 runs (or we say honestly that it refuses, and demo in replay)
+- [x] [hand] Chosen provider + model call tools reliably for S1 (5 runs in a row) (Groq openai/gpt-oss-120b: 5/5 with each persona, 2026-10-30)
+- [x] [hand] With the shield OFF, the live model falls for S2 at least once in 3 runs (or we say honestly that it refuses, and demo in replay) (full leak 2/9 runs, secret read 9/9; not reliable, so S2 shield OFF is demoed in replay: DECISIONS.md)
 - [x] [auto] Recorded live runs saved as replay fixtures; replay reproduces them (tests/test_live_llm.py)
 - [x] [auto] Live mode errors (timeout, bad JSON args) end in R0 DENY or a clean `error` event, never a hang (tests/test_live_llm.py; 429 → one retry)
 

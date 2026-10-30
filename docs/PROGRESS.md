@@ -2,9 +2,14 @@
 
 > Claude: the session-start hook loads this file. Update it at the end of every task (`/checkpoint`, `/handoff`). Keep it under 150 lines; details go to AI-LOG.md.
 
-**Last updated:** 2026-10-30 19:45 IST (starter delivered)
+**Last updated:** 2026-10-30 22:45 IST (V1-4 live LLM)
 **Live URLs:** frontend <…> · backend <…>
-**Next task:** V1-0 setup on every laptop, then each person opens their prompt in `prompts/`.
+**Next task:** merge V1-4; teammates pull main. Live demo: S1 live, S2 OFF in replay, S2 ON live or replay.
+
+## Done (V1-4 live LLM, Person B, feat/live-llm)
+- Groq openai/gpt-oss-120b live: S1 5/5; S2 shield OFF leaks 2/9 (reads the secret 9/9) → attack demo stays in replay (DECISIONS.md); shield ON blocks read_secret live
+- `scripts/llm_probe.py`, `scripts/live_trials.py --pause 25`; RECORD_FIXTURES + `script_file:`; one real recording in app/fixtures/
+- Timeout / 429 (one retry) / hang → clean `error` event; Live option only when /health says available; 99 tests
 
 ## Done (by the starter, verified)
 - V1-1 core gate: capsule, segments, tracer, rules R0–R8, canaries, fail-closed, approvals with timeout
@@ -14,13 +19,13 @@
 - 85 backend tests, `make check` green, CI workflow, Dockerfile, deploy notes
 
 ## Not verified yet
-- Live LLM mode against a capable hosted model (pipeline works end to end in the UI against local Ollama llama3.2, but that model is too weak)
+- Live mode in the UI against Groq (UI end to end checked against local Ollama only; the Groq runs were in-process via live_trials.py)
 - Docker image build and a real deployment
 - Projector on the real venue screen (Chromium at 1280×720 checked: readable)
 - Windows setup without make (commands in README)
 
 ## In progress
-- V1-4 live LLM (Person B, branch feat/live-llm): probe + trials scripts, recorder + `script_file:`, timeout/429 handling, Live option hidden unless /health says available, all done and tested (98 tests). **Left:** the two [hand] lines need a capable hosted model: put LLM_BASE_URL / LLM_MODEL / LLM_API_KEY in backend/.env, run `scripts/llm_probe.py`, then `scripts/live_trials.py s1 --runs 5` and `s2 --runs 3 --shield off --record`. Local llama3.2 (3B) can't chain tool calls (docs/API-NOTES.md).
+- none
 
 ## Known bugs
 - S1/S2 `legit_done` only checks that an email reached Priya, so a fake summary that never read the inbox still counts as done (seen with llama3.2 live). Replay is unaffected. Read live-trial output by hand.

@@ -37,6 +37,8 @@ async def trials(args: argparse.Namespace) -> int:
         f"{sc.id} '{sc.title}' x{args.runs}, shield {'ON' if args.shield == 'on' else 'OFF'}, model {st.llm_model}"
     )
     for i in range(1, args.runs + 1):
+        if i > 1:
+            await asyncio.sleep(args.pause)  # free tiers limit tokens per minute
         s = create_session(
             st,
             scenario=sc,
@@ -68,6 +70,7 @@ def main() -> None:
     ap.add_argument(
         "--record", action="store_true", help="save each run to app/fixtures/ (RECORD_FIXTURES=1)"
     )
+    ap.add_argument("--pause", type=float, default=0, help="seconds between runs (Groq free tier: ~25)")
     ap.add_argument("--base-url")
     ap.add_argument("--model")
     ap.add_argument("--key-var")
