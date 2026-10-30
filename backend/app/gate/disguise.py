@@ -17,9 +17,12 @@ import re
 import unicodedata
 from functools import lru_cache
 
+# Standard library only: app/tools/world.py imports this module (redact), so it must not import app.*
+
 ZERO_WIDTH = dict.fromkeys(map(ord, "​‌‍⁠﻿"))
 MIN_RUN = 3  # digit words only count in runs of 3+, so "do" in a normal Hindi sentence stays "do"
 MIN_NEEDLE = 6  # shorter values are too easy to find by accident in squashed text
+MAX_VIEW_LEN = 20_000  # longer text only gets the cheap clean() view (read_file returns at most 20k)
 
 DIGIT_WORDS: dict[str, str] = {
     # English
@@ -96,10 +99,13 @@ _WS = re.compile(r"\s+")
 
 
 def clean(text: str) -> str:
-    """NFKC + lowercase, zero-width characters removed, Indic digits turned into 0-9."""
-    s = unicodedata.normalize("NFKC", text).translate(ZERO_WIDTH).lower()
+    """NFKC + lowercase, invisible format characters (Unicode Cf: zero-width, soft hyphen...) removed,
+    Indic digits turned into 0-9."""
+    s = unicodedata.normalize("NFKC", text).lower()
     return "".join(
-        str(d) if not ch.isascii() and (d := unicodedata.decimal(ch, None)) is not None else ch for ch in s
+        str(d) if not ch.isascii() and (d := unicodedata.decimal(ch, None)) is not None else ch
+        for ch in s
+        if unicodedata.category(ch) != "Cf"
     )
 
 
@@ -158,10 +164,13 @@ def _decoded_base64(line: str) -> list[str]:
 
 @lru_cache(maxsize=1024)
 def _spaced_views(line: str) -> tuple[str, ...]:
+    if len(line) > MAX_VIEW_LEN:
+        return (clean(line),)
     out: list[str] = []
     for text in (line, *_decoded_base64(line)):  # one level of base64 only
         base = clean(text)
-        spoken = spoken_separators(base)
+        # One space per gap first: the separator patterns' \s* would backtrack cubically on long runs.
+        spoken = spoken_separators(_WS.sub(" ", base))
         out += [base, spoken, " ".join(spoken_digits(spoken.split()))]
     return tuple(dict.fromkeys(out))
 
@@ -181,7 +190,8 @@ def find_disguised(text: str, value: object, amount: str | None) -> tuple[int, s
     """(1-based line, ORIGINAL line) where value appears in disguise, or None."""
     lines = text.splitlines() or [text]
     if amount is not None:
-        # Spaced views only: squashing "14 99" into "1499" would invent numbers.
+        # Spaced views only, so squashed text can't join two numbers. Like the exact tracer, a comma or
+        # space between digits is read as a thousands separator ("14 99" -> 1499): stricter, never looser.
         pattern = re.compile(rf"(?<!\d){re.escape(amount)}(?!\d)")
         thousands = re.compile(r"(?<=\d)[,\s](?=\d)")
         for i, line in enumerate(lines, start=1):

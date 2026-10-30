@@ -141,6 +141,16 @@ def _decide(ctx: GateContext, tool: str, raw_args: Any, step: int) -> Decision:
             )
         elif ev.origin == Origin.SECRET and tool in P.egress:
             add("R4_SECRET_EGRESS", Verdict.DENY, f"'{arg}' is a secret value and {tool} sends data out.", ev)
+        elif ev.disguised and ev.origin in (Origin.USER, Origin.TRUSTED):
+            # Reading your words squashed or spoken ("anyone at evil.test") can produce an address you
+            # never meant. A disguised match may take trust away, never grant it on its own.
+            add(
+                "R5_SINK_INVENTED",
+                Verdict.REQUIRE_APPROVAL,
+                f"'{arg}' = {ev.value} matches {_where(ev)} only when the words are read as spoken or squashed"
+                " text ('at' -> '@'). Please confirm it's what you meant.",
+                ev,
+            )
         elif ev.origin == Origin.MODEL_INVENTED and store.read_untrusted:
             add(
                 "R5_SINK_INVENTED",
