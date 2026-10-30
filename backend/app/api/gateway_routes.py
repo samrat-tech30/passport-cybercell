@@ -149,6 +149,11 @@ async def gateway_decide(session_id: str, body: GatewayDecideIn) -> dict[str, An
     d.executed = run
     if run:
         s.gateway_runs[d.id] = (body.tool, clean if clean is not None else {})
+        spec = TOOLS.get(body.tool)
+        if spec is None or spec.output_trust != Trust.TRUSTED:
+            # Outside content is about to enter the agent's context, whether or not /observe ever
+            # labels it: from now on invented values can't count as clean (red team: blind gate).
+            s.gate.store.read_untrusted = True
     message = _agent_message(d, run)
     try:
         repo.save_decision(d)
@@ -212,26 +217,34 @@ async def observe(session_id: str, body: ObserveIn) -> dict[str, Any]:
         raise _err(409, "observe_rejected", "Output can be reported once, only for a call this session ran.")
     s.gateway_observed.add(body.decision_id)
     tool, args = entry
-    _ingest(s, tool, args, body.output)
+    _ingest(s, body.decision_id, tool, args, body.output)
     preview = s.world.redact(body.output)[:300]
     await s.emit("tool_result", {"decision_id": body.decision_id, "executed": True, "preview": preview})
     return {"ok": True}
 
 
-def _ingest(s: Session, tool: str, args: dict[str, Any], output: str) -> None:
-    """Label upstream output. Trust comes from the tool registry by name, never from the caller."""
+def _ingest(s: Session, decision_id: str, tool: str, args: dict[str, Any], output: str) -> None:
+    """Label upstream output. Trust comes from the tool registry by name, never from the caller.
+
+    The upstream is not PASSPORT's World, so nothing it returns is a fixed confirmation: every byte
+    the agent sees is stored, at the tool's trust capped to UNTRUSTED, under an id unique to this
+    decision (a re-read with new content, or fields we don't parse, are never dropped).
+    """
     store = s.gate.store
     spec = TOOLS.get(tool)
-    if spec is None:
-        store.add(f"{tool[:64]}:{len(store.items)}", f"{tool[:64]} output", Trust.UNTRUSTED, output)
-        return
-    if tool == "read_secret" and isinstance(args.get("key"), str):
-        if len(output) >= 6:
-            s.world.vault[args["key"]] = output  # redaction and R4 cover the real upstream value
-    try:
-        parsed: Any = json.loads(output) if tool in ("list_unread_emails", "read_email") else output
-        store.ingest(tool, args, parsed)
-    except (ValueError, KeyError, TypeError, AttributeError):
-        # Not the shape we expect: keep it, at the tool's trust (or lower), as one plain segment.
-        trust = spec.output_trust if spec.output_trust != Trust.TRUSTED else Trust.UNTRUSTED
-        store.add(f"{tool}:{len(store.items)}", f"{tool} output", trust, output)
+    trust = spec.output_trust if spec and spec.output_trust != Trust.TRUSTED else Trust.UNTRUSTED
+    if spec is not None:
+        if tool == "read_secret" and isinstance(args.get("key"), str) and len(output) >= 6:
+            key = args["key"]
+            if s.world.vault.get(key) not in (None, output):
+                key = f"{key}_UPSTREAM"  # never replace a canary; redaction and R2/R4 cover both
+            s.world.vault[key] = output
+        try:
+            # Parsed first, so evidence points at the email/file line when the value is in there.
+            parsed: Any = json.loads(output) if tool in ("list_unread_emails", "read_email") else output
+            if spec.output_trust != Trust.TRUSTED:
+                store.ingest(tool, args, parsed)
+        except (ValueError, KeyError, TypeError, AttributeError, RecursionError):
+            pass  # not the shape we expect: the raw segment below still labels all of it
+    name = tool[:64]
+    store.add(f"{name}:out:{decision_id}", f"{name} output", trust, output)

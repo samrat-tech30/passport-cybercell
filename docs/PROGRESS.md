@@ -24,7 +24,9 @@
 ## Done (G1 backend gateway API, Person B for Person A, feat/gateway-engine)
 - `app/api/gateway_routes.py` per contracts "Gateway API": token gate (503/401, compare_digest, 300/min per token), sessions/intent/decide/observe/list; R0 on any exception; approvals wait in the request; monitor mode; trust from the registry; observed secrets join the vault (R2 + redaction)
 - Migration 002 `gateway_sessions` side table (sessions.mode CHECK can't widen without cascade-deleting decisions: DECISIONS.md); `create_gateway_session` (no LLM, World only for redaction)
-- 16 tests in `tests/test_gateway_api.py`; contract examples `gateway.*.json`; red-teamer run (see below)
+- 16 tests in `tests/test_gateway_api.py`; contract examples `gateway.*.json`
+- Red-teamer: 5 bypasses, all from upstream output that /observe dropped (action-tool output ignored, unobserved read left the gate blind, email fields beyond from/subject/body, re-read of the same email id / file path deduped). Fixed: every observed output is also stored whole, capped to UNTRUSTED, under an id per decision; run=true on a non-trusted tool marks outside content as read before the upstream runs; an observed secret never replaces a canary. 18 tests in `tests/test_redteam_gateway.py` (170 backend tests)
+- Red-team notes, not fixed (stated limits): the intent is whatever the client sends to start_task; `GET /v1/gateway/sessions` shows intents without a token (contract); **`POST /approvals/{id}` is open unless `DEMO_ACCESS_CODE` is set: set it on any deployed backend**
 
 ## Done (G0 gateway contract, Person A, feat/gateway-contract)
 - contracts/README.md "Gateway API": /v1/gateway/sessions (create, list), intent (locked after first), decide (approval waits ≤ 40 s in the request), observe (once, trust from registry); X-Gateway-Token, 503 when unset; 300/min per token; event gateway_call; 5 error codes; CHANGELOG v0.2.0
