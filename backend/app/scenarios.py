@@ -3,14 +3,16 @@ what counts as the attack landing / the legit task being done, and the expected 
 
 from __future__ import annotations
 
+import json
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Literal
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 SCENARIO_DIR = Path(__file__).resolve().parent / "scenarios"
+FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"  # recorded live runs (app/agent/recorder.py)
 
 
 class WorldSpec(BaseModel):
@@ -45,7 +47,18 @@ class Scenario(BaseModel):
     legit_done_if: list[str] = []
     expect_on: list[Expectation] = []
     v2_note: str | None = None
-    script: list[dict[str, Any]]
+    script: list[dict[str, Any]] = []
+    # a recorded live run instead of an inline script; only a plain file name under app/fixtures/
+    script_file: str | None = Field(default=None, pattern=r"^fixtures/[A-Za-z0-9_.-]+\.json$")
+
+    @model_validator(mode="after")
+    def _one_script(self) -> Scenario:
+        if bool(self.script) == bool(self.script_file):
+            raise ValueError("a scenario needs exactly one of script or script_file")
+        if self.script_file:
+            doc = json.loads((FIXTURES_DIR / Path(self.script_file).name).read_text(encoding="utf-8"))
+            self.script = doc["script"]
+        return self
 
     @property
     def is_attack(self) -> bool:

@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from typing import Any, Literal
 
 from app.agent.llm import LLM, OpenAICompatLLM, ReplayLLM
+from app.agent.recorder import Recorder
 from app.config import Settings
 from app.contracts import Decision, new_id
 from app.db import audit, repo
@@ -20,7 +21,7 @@ from app.gate.capsule import build_capsule
 from app.gate.decide import GateContext
 from app.gate.policy import load_policy
 from app.gate.segments import new_store
-from app.scenarios import Scenario
+from app.scenarios import FIXTURES_DIR, Scenario
 from app.tools.world import World
 
 ApprovalMode = Literal["interactive", "approve", "reject", "timeout"]
@@ -42,6 +43,7 @@ class Session:
     approval_timeout_s: int
     max_steps: int
     persist: bool = True
+    recorder: Recorder | None = None
     status: str = "created"
     decisions: dict[str, Decision] = field(default_factory=dict)
     _world_events_saved: int = 0
@@ -103,6 +105,7 @@ def create_session(
     mode: Literal["replay", "live"],
     approval_mode: ApprovalMode = "interactive",
     persist: bool = True,
+    llm: LLM | None = None,  # tests inject a fake-client OpenAICompatLLM here
 ) -> Session:
     if mode == "replay" and scenario is None:
         raise ValueError("replay mode needs a scenario (its recorded plan)")
@@ -123,7 +126,11 @@ def create_session(
         profile=policy.default_profile,
         fault=scenario.fault if scenario else None,
     )
-    llm: LLM = ReplayLLM(scenario.script) if mode == "replay" else OpenAICompatLLM(settings)
+    if llm is None:
+        llm = ReplayLLM(scenario.script) if mode == "replay" else OpenAICompatLLM(settings)
+    recorder = None
+    if mode == "live" and settings.record_fixtures:
+        recorder = Recorder(FIXTURES_DIR, scenario.id if scenario else None, settings.llm_model, shield_on)
     s = Session(
         id=sid,
         scenario=scenario,
@@ -138,6 +145,7 @@ def create_session(
         approval_timeout_s=settings.approval_timeout_s,
         max_steps=settings.max_agent_steps,
         persist=persist,
+        recorder=recorder,
     )
     if persist:
         repo.create_session(sid, scenario.id if scenario else None, request, shield_on, mode)

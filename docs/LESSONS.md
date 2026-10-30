@@ -10,6 +10,11 @@
 - `pkill -f "uvicorn app.main:app"` killed the shell running it → the pattern matched the shell's own command line → kill by PID (`ps aux | grep …`), or match a narrower pattern.
 - At 1280×720 argument values wrapped one letter per line → the long origin label was `nowrap` in a 3-column grid → container query: origin goes under the value on narrow cards.
 - Screenshot script timed out → Playwright can't mix `text=` and CSS in one comma selector → CSS only (`p.done, dialog.approval[open], p.error`).
+- Files flipped to CRLF after a scripted edit on Windows → Python `Path.write_text` translates `
+` to `
+` → write with `write_bytes(text.encode())` or `newline="
+"`.
+- `scripts/check.sh` fails on Windows (`.venv/bin` doesn't exist; it's `.venv/Scripts`) → run its steps by hand with `Scripts/` paths.
 - No `sqlite3` CLI on most laptops (Windows) → tamper demo is a Python script: `make tamper`.
 - A test failed about 1 run in 4 (amount 2 traced to SECRET) → the tracer looked for the value INSIDE random hex canaries → a value is secret-born only if it contains the whole secret.
 - A 900-space email line took 5 s in decide() → `\s*[\[(]?\s*\bat\b` backtracks cubically on long whitespace → collapse whitespace before regexes with adjacent `\s*`.
