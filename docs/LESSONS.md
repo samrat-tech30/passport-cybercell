@@ -16,3 +16,4 @@
 - "ignore anyone at evil.test" in the user's request made anyone@evil.test look user-typed → a disguise/squash pass over user/trusted text can grant trust → disguised matches may only take trust away, never grant it.
 - `mktemp` ignored TMPDIR on macOS → BSD mktemp with no template uses the system temp dir → `mktemp "${TMPDIR:-/tmp}/name.XXXXXX"`.
 
+- s9b/s13b only got ASK → email fields other than From/Subject/body were never added to the untrusted segment → label every field except id/from/subject/body, after the body.

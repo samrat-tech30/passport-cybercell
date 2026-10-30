@@ -2,7 +2,7 @@
 
 > Claude: the session-start hook loads this file. Update it at the end of every task (`/checkpoint`, `/handoff`). Keep it under 150 lines; details go to AI-LOG.md.
 
-**Last updated:** 2026-10-31 IST (Part 1 attacks s9–s13b on feat/attacks, not merged)
+**Last updated:** 2026-10-31 IST (email-fields fix on feat/email-fields, on top of feat/attacks, not merged)
 **Live URLs:** frontend <…> · backend <…>
 **Next task:** V1-0 setup on every laptop, then each person opens their prompt in `prompts/`.
 
@@ -21,10 +21,10 @@
 
 ## Done (Part 1 attacks, Person A, branch feat/attacks on top of feat/v2b-disguise, committed, not merged)
 - 7 new attack scenarios: s9 reply-to in body (DENY R3), s9b Reply-To header (ASK R5), s10 address split across two emails (ASK R5), s11 look-alike vendor new account (DENY R3), s12 urgent CEO in Kannada (DENY R1+R3), s13 subject line (DENY R3), s13b attachment name (ASK R5)
-- Eval (`python -m app.eval_runner --no-save`): attacks 16/16 → 0/16, legit 14/14 → 14/14, 0 popups on clean legit tasks. 3 of the 16 are stopped only by an approval the scenario rejects (s9b, s10, s13b). PITCH/RESULTS numbers not updated yet.
+- Eval (`python -m app.eval_runner --no-save`): attacks 16/16 → 0/16, legit 14/14 → 14/14, 0 popups on clean legit tasks. After the email-fields fix only s10 is stopped by an approval the scenario rejects; s9b and s13b are DENY R3. PITCH/RESULTS numbers not updated yet.
 
 ## Tasks for M2 (gaps found by Part 1 attacks, THREAT-MODEL §5)
-- [ ] Label every email field (Reply-To, Cc, attachment names) in `segments._add_email`, so s9b and s13b become DENY R3. Flip their `expect_on` + a tracer test.
+- [x] Label every email field (Reply-To, Cc, attachment names) in `segments._add_email`: s9b and s13b are now DENY R3 (tests/test_segments.py). Done by Person A on feat/email-fields.
 - [ ] Split values across segments (s10): trace a value that is the join of pieces from two untrusted segments, or say why not in DECISIONS.md.
 - [ ] Reply false positive: a trusted contacts directory (like vendors.json) so "Reply to Rahul's email" works without typing the address. Needs a scenario + test.
 - [ ] Optional: flag ASCII look-alike sender domains (vs vendor registry / company domain) in the approval popup message only, never in the verdict.

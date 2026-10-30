@@ -13,6 +13,21 @@ from app.contracts import Segment, Trust
 from app.tools.registry import TOOLS
 from app.tools.world import World
 
+_EMAIL_CORE = ("id", "from", "subject", "body")
+
+
+def _extra_fields(e: dict[str, Any]) -> str:
+    """Every other field the agent can see (Reply-To, Cc, attachment names...) as extra lines AFTER the
+    body, so body line numbers never move. Empty string when there are none."""
+    # Everything except the core fields, not an allowlist: a header nobody planned for is still labelled.
+    lines = []
+    for key, value in e.items():
+        if key in _EMAIL_CORE:
+            continue
+        items = value if isinstance(value, list) else [value]
+        lines.append(f"{key}: " + ", ".join(str(v) for v in items))
+    return "\n\n" + "\n".join(lines) if lines else ""
+
 
 class SegmentStore:
     def __init__(self) -> None:
@@ -34,7 +49,7 @@ class SegmentStore:
         return next((s for s in self.items if s.id == seg_id), None)
 
     def _add_email(self, e: dict[str, Any]) -> None:
-        text = f"From: {e['from']}\nSubject: {e['subject']}\n\n{e['body']}"
+        text = f"From: {e['from']}\nSubject: {e['subject']}\n\n{e['body']}" + _extra_fields(e)
         self.add(f"email:{e['id']}", f"Email #{e['id']} from {e['from']}", Trust.UNTRUSTED, text)
 
     def ingest(self, tool: str, args: dict[str, Any], output: Any) -> None:
