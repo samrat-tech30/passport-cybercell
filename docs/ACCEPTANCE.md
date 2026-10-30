@@ -38,7 +38,11 @@ Slices marked ✅ were delivered by the starter and verified on 2026-10-30 (85 b
 ## V2-C Herd immunity (prompts/v2-C-herd-immunity.md)
 - [ ] [auto] value blocked in session A → R12 in session B; same poisoned email quarantined before B's LLM sees it
 - [ ] [hand] two-window demo works
-## V2-D Payment visa (prompts/v2-D-payment-visa.md)
+## V2-E MCP gateway (prompts/v2-E-mcp-gateway.md; replaces V2-D)
+- [ ] [auto] s2 over MCP: read ALLOW, attacker send DENY with rule + line, legit send ALLOW (integrations/mcp_gateway/tests)
+- [ ] [auto] fail closed: tool before `start_task`, second `start_task`, backend down, REQUIRE_APPROVAL without approval → all refused; the tool never runs
+- [ ] [hand] the s2 example works in Claude Desktop or the MCP Inspector; gateway calls show in the Audit tab
+## V2-D Payment visa (prompts/v2-D-payment-visa.md; dropped for V2-E, only if everything else is done)
 - [ ] [auto] direct tool call without visa, edited args, reused visa, expired visa → all refused; approved flow still pays
 
 ## E-1 Demo ready (by 12:00)

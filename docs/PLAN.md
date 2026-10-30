@@ -5,7 +5,7 @@ The v1 core is already built and tested. Tonight is about: (1) a live LLM that r
 ## Roles
 | Person | Owns | First prompt | v2 piece |
 |---|---|---|---|
-| **M1 Agent + API** | live LLM mode, replay recordings, API, deploy | `prompts/M1-live-llm.md` | D payment visa (only if ahead) |
+| **M1 Agent + API** | live LLM mode, replay recordings, API, deploy | `prompts/M1-live-llm.md` | E MCP gateway (replaces D) |
 | **M2 Gate** | rules, tracer, policy, tests | `prompts/M2-gate-v2-disguise.md` | B disguise-proof tracing |
 | **M3 Frontend** | UI polish, projector, two-window view, scoreboard | `prompts/M3-frontend-polish.md` | C two-window view |
 | **M4 Attacks + story** | new attack scenarios, UPI world, threat model, slides, video | `prompts/M4-attacks-and-story.md` | A UPI payments; C threat ledger |
@@ -14,7 +14,8 @@ The v1 core is already built and tested. Tonight is about: (1) a live LLM that r
 1. **B disguise-proof tracing** (M2) – turns s7b/s7c from ASK into DENY; Indian-language angle.
 2. **A UPI payments + mandate lock** (M4 + M2) – the India story (agentic UPI payments).
 3. **C herd immunity** (M4 + M3) – the memorable two-window moment.
-4. **D payment visa** (M1) – only if everything above is green by 08:00.
+4. **E MCP gateway** (M1 / Person B, `prompts/v2-E-mcp-gateway.md`) – replaces D: the problem statement names "MCP gateway" as an extension. Start by 04:00; cut at 08:00 if not working.
+5. **D payment visa** – dropped; only if everything else is done.
 Never cut: v1 gate, evidence drawer, before/after demo, scoreboard.
 
 ## Timeline (IST)
