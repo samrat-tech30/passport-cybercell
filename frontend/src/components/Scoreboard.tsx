@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, ApiError } from "../lib/api/client";
 import type { EvalResult } from "../lib/api/types";
+import { Illustration } from "./Illustration";
 
 const yn = (v: boolean | null) => (v === null ? "–" : v ? "Yes" : "No");
 
@@ -33,53 +34,61 @@ export function Scoreboard() {
     <div className="page">
       <header className="page__head">
         <div>
-          <h1 className="display">Attack works before. Fails after.</h1>
-          <p className="muted">Every scenario runs twice, shield off and on, in replay mode. Numbers are measured, not typed.</p>
+          <p className="eyebrow">Scoreboard</p>
+          <h1 className="display">
+            Attack works before. <mark className="hl">Fails after.</mark>
+          </h1>
+          <p className="lead">Every scenario runs twice, shield off and on, in replay mode. Numbers are measured, not typed.</p>
         </div>
         <button type="button" className="btn btn--brand" onClick={run} disabled={busy}>
           {busy ? "Running all scenarios…" : "Run evaluation"}
         </button>
       </header>
       {error && <p className="error" role="alert">{error}</p>}
-      {!result && !busy && <p className="muted">No evaluation yet. Press Run evaluation.</p>}
+      {!result && !busy && !error && (
+        <div className="empty">
+          <Illustration scene="ledger" className="empty__art" />
+          <p className="h2">No evaluation yet.</p>
+          <p className="muted">Press Run evaluation. It runs every scenario with the shield off, then on.</p>
+        </div>
+      )}
       {result && (
         <>
-          <p className="verdict-line" role="status">
-            <span className="verdict-line__k">Shield on</span>
-            {result.summary.on.attacks_landed} of {result.summary.on.attacks_total} attacks got through,{" "}
-            {result.summary.on.legit_done} of {result.summary.on.legit_total} legit tasks still done.
-            <span className="muted"> Shield off: {result.summary.off.attacks_landed} of {result.summary.off.attacks_total} got through.</span>
-          </p>
-          <div className="metrics">
-            <div className="card metric">
-              <span className="muted">Attacks that got through</span>
+          <section className="metrics" aria-label="Results">
+            <div className="metric">
+              <span className="metric__label">Attacks that got through</span>
               <span className="metric__pair">
                 <span className="metric__off">{result.summary.off.attacks_landed}/{result.summary.off.attacks_total}</span>
-                <span className="muted">→</span>
+                <span className="metric__arrow" aria-label="then">→</span>
                 <span className="metric__on">{result.summary.on.attacks_landed}/{result.summary.on.attacks_total}</span>
               </span>
-              <span className="muted small">shield off → shield on</span>
+              <span className="metric__note">shield off → shield on</span>
             </div>
-            <div className="card metric">
-              <span className="muted">Legitimate tasks completed</span>
+            <div className="metric">
+              <span className="metric__label">Legitimate tasks completed</span>
               <span className="metric__pair">
                 <span>{result.summary.off.legit_done}/{result.summary.off.legit_total}</span>
-                <span className="muted">→</span>
+                <span className="metric__arrow" aria-label="then">→</span>
                 <span className="metric__on">{result.summary.on.legit_done}/{result.summary.on.legit_total}</span>
               </span>
-              <span className="muted small">shield off → shield on</span>
+              <span className="metric__note">shield off → shield on</span>
             </div>
-            <div className="card metric">
-              <span className="muted">Approval popups on clean legit tasks</span>
+            <div className="metric">
+              <span className="metric__label">Approval popups on clean legit tasks</span>
               <span className="metric__pair"><span className="metric__on">{result.summary.on.approvals_on_clean_legit_tasks}</span></span>
-              <span className="muted small">shield on</span>
+              <span className="metric__note">shield on</span>
             </div>
-          </div>
+          </section>
+          <p className="verdict-line" role="status">
+            <strong>Shield on:</strong> {result.summary.on.attacks_landed} of {result.summary.on.attacks_total} attacks got through, and{" "}
+            {result.summary.on.legit_done} of {result.summary.on.legit_total} legitimate tasks still finished.
+            <span className="muted"> Shield off: {result.summary.off.attacks_landed} of {result.summary.off.attacks_total} got through.</span>
+          </p>
           <table className="table">
             <thead>
               <tr>
                 <th>Scenario</th><th>Category</th><th>Attack landed (off)</th><th>Attack landed (on)</th>
-                <th>Legit done (on)</th><th>Asks</th><th>Denies</th>
+                <th>Legit done (on)</th><th className="num">Asks</th><th className="num">Denies</th>
               </tr>
             </thead>
             <tbody>
@@ -88,8 +97,8 @@ export function Scoreboard() {
                 const on = get(id, true)!;
                 return (
                   <tr key={id}>
-                    <td><strong>{id}</strong> <span className="muted">{on.title}</span></td>
-                    <td className="muted">{on.category.replace("_", " ")}</td>
+                    <td><span className="cell-id">{id.toUpperCase()}</span> {on.title}</td>
+                    <td className="muted nowrap">{on.category.replace(/_/g, " ")}</td>
                     <td className={off.attack_landed ? "bad" : ""}>{yn(off.attack_landed)}</td>
                     <td className={on.attack_landed ? "bad" : on.attack_landed === false ? "ok" : ""}>{yn(on.attack_landed)}</td>
                     <td>{yn(on.legit_done)}</td>

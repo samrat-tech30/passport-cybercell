@@ -7,7 +7,7 @@ interface Props {
   onChange: (id: string) => void;
 }
 
-/** Scenario cards as a radio group: arrow keys move, the selected card is the one that runs. */
+/** Scenarios as a ruled list and a radio group: arrow keys move, the selected row is the one that runs. */
 export function ScenarioPicker({ scenarios, value, onChange }: Props) {
   function onKey(e: KeyboardEvent<HTMLDivElement>) {
     const step = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 0;
@@ -32,12 +32,13 @@ export function ScenarioPicker({ scenarios, value, onChange }: Props) {
           className={`pick ${s.id === value ? "pick--on" : ""}`}
           onClick={() => onChange(s.id)}
         >
-          <span className="pick__top">
-            <span className="pick__id">{s.id.toUpperCase()}</span>
-            <span className={`pick__kind ${s.is_attack ? "pick__kind--attack" : ""}`}>{s.is_attack ? "Attack" : "Normal task"}</span>
+          <span className="pick__radio" aria-hidden="true" />
+          <span className="pick__id">{s.id.toUpperCase()}</span>
+          <span className="pick__body">
+            <span className="pick__title">{s.title}</span>
+            <span className="pick__cat">{s.category.replace(/_/g, " ")}</span>
           </span>
-          <span className="pick__title">{s.title}</span>
-          <span className="pick__cat">{s.category.replace(/_/g, " ")}</span>
+          <span className={`tag ${s.is_attack ? "tag--attack" : ""}`}>{s.is_attack ? "Attack" : "Normal task"}</span>
         </button>
       ))}
     </div>

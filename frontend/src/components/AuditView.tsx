@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api, ApiError } from "../lib/api/client";
 import type { AuditRow, AuditVerify } from "../lib/api/types";
+import { Illustration } from "./Illustration";
 
 export function AuditView() {
   const [rows, setRows] = useState<AuditRow[]>([]);
@@ -26,37 +27,48 @@ export function AuditView() {
     <div className="page">
       <header className="page__head">
         <div>
-          <h1 className="display">Tamper-evident audit log</h1>
-          <p className="muted">Each row stores the hash of the row before it. Edit any row and the chain breaks there.</p>
+          <p className="eyebrow">Audit</p>
+          <h1 className="display">A log that shows if anyone edits it.</h1>
+          <p className="lead">Each row stores the hash of the row before it. Change any row and the chain breaks from there.</p>
         </div>
         <button type="button" className="btn btn--brand" onClick={load}>Verify chain</button>
       </header>
       {error && <p className="error" role="alert">{error}</p>}
       {verify && (
-        <p className={`pill ${verify.ok ? "pill--ok" : "pill--bad"}`} role="status">
-          {verify.ok ? `Chain intact · ${verify.rows} rows · head ${verify.head.slice(0, 12)}` : `Chain broken at row #${verify.broken_at}`}
+        <p className={`chain ${verify.ok ? "chain--ok" : "chain--bad"}`} role="status">
+          <span className="chain__state">{verify.ok ? "Chain intact" : `Chain broken at row ${verify.broken_at}`}</span>
+          <span className="chain__meta">{verify.rows} rows</span>
+          {verify.ok && <span className="chain__meta mono">head {verify.head.slice(0, 12)}</span>}
         </p>
       )}
-      <table className="table">
-        <thead>
-          <tr><th>#</th><th>Time</th><th>Kind</th><th>Detail</th><th>Hash</th></tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.seq}>
-              <td className="num">{r.seq}</td>
-              <td className="num">{new Date(r.ts * 1000).toLocaleTimeString()}</td>
-              <td>{r.kind}</td>
-              <td className="mono small">
-                {r.kind === "decision"
-                  ? `${String(r.payload.tool)} → ${String(r.payload.verdict)} (${String(r.payload.rule_id)})`
-                  : JSON.stringify(r.payload).slice(0, 80)}
-              </td>
-              <td className="mono small">{r.hash.slice(0, 12)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {rows.length === 0 && !error ? (
+        <div className="empty">
+          <Illustration scene="ledger" className="empty__art" />
+          <p className="h2">Nothing logged yet.</p>
+          <p className="muted">Run a scenario on the Agent tab. Every decision lands here.</p>
+        </div>
+      ) : (
+        <table className="table">
+          <thead>
+            <tr><th className="num">#</th><th>Time</th><th>Kind</th><th>Detail</th><th>Hash</th></tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.seq}>
+                <td className="num">{r.seq}</td>
+                <td className="nowrap">{new Date(r.ts * 1000).toLocaleTimeString()}</td>
+                <td>{r.kind}</td>
+                <td className="mono">
+                  {r.kind === "decision"
+                    ? `${String(r.payload.tool)} → ${String(r.payload.verdict)} (${String(r.payload.rule_id)})`
+                    : JSON.stringify(r.payload).slice(0, 80)}
+                </td>
+                <td className="mono muted">{r.hash.slice(0, 12)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }

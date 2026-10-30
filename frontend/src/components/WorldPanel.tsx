@@ -23,8 +23,8 @@ export function WorldPanel({ events, phase }: { events: WorldEvent[]; phase: Run
   const attacker = events.filter((e) => e.kind === "attacker_received");
   const actions = events.filter((e) => e.kind !== "attacker_received");
   return (
-    <aside className="side">
-      <section className={`card attacker ${attacker.length ? "attacker--hit" : ""}`} aria-live="polite">
+    <>
+      <section className={`rail__block attacker ${attacker.length ? "attacker--hit" : ""}`} aria-live="polite">
         <h2 className="label">What the attacker received</h2>
         {attacker.length === 0 ? (
           <p className={`attacker__none ${phase === "done" ? "attacker__none--ok" : ""}`}>
@@ -48,19 +48,19 @@ export function WorldPanel({ events, phase }: { events: WorldEvent[]; phase: Run
                 <li key={i} className="leak">
                   <strong>{d.channel === "payment" ? `Payment to ${d.account}` : `Email to ${d.to}`}</strong>
                   {leaked.length > 0 && <span className="pill pill--bad">Leaked: {leaked.join(", ")}</span>}
-                  {typeof d.body_preview === "string" && <p className="mono small">{d.body_preview}</p>}
+                  {typeof d.body_preview === "string" && <p className="leak__body">{d.body_preview}</p>}
                 </li>
               );
             })}
           </ul>
         )}
       </section>
-      <section className="card">
+      <section className="rail__block">
         <h2 className="label">What actually happened</h2>
         {actions.length === 0 ? <p className="muted">{phase === "done" ? "Nothing ran." : "No actions yet."}</p> : (
           <ul className="list list--log">{actions.map((e, i) => <li key={i}>{line(e)}</li>)}</ul>
         )}
       </section>
-    </aside>
+    </>
   );
 }

@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AuditView } from "./components/AuditView";
-import { Legend } from "./components/Legend";
+import { Illustration } from "./components/Illustration";
 import { RunView } from "./components/RunView";
 import { Scoreboard } from "./components/Scoreboard";
 import { api, ApiError, getAccessCode, setAccessCode } from "./lib/api/client";
@@ -24,17 +24,6 @@ export default function App() {
   const [mode, setMode] = useState<"replay" | "live">("replay");
   const [tab, setTab] = useState<Tab>("run");
   const [code, setCode] = useState(getAccessCode());
-  const [theme, setTheme] = useState(() => document.documentElement.dataset.theme === "dark" ? "dark" : "light");
-  const toggleTheme = () => {
-    const next = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    document.documentElement.dataset.theme = next;
-    try {
-      localStorage.setItem("passport.theme", next);
-    } catch {
-      /* storage blocked: theme just won't be remembered */
-    }
-  };
   const { state, start, answer } = useRun();
 
   const load = useCallback(() => {
@@ -64,7 +53,56 @@ export default function App() {
   const run = () => {
     if (canRun) start({ scenarioId, shieldOn, mode: runMode });
   };
-  const tabIndex = TABS.findIndex((t) => t.id === tab);
+
+  const controls = (
+    <form
+      className="controls"
+      onSubmit={(e) => {
+        e.preventDefault();
+        run();
+      }}
+      onKeyDown={(e) => {
+        // Browsers only submit on Enter from text inputs; make Enter on a select run too.
+        if (e.key === "Enter" && e.target instanceof HTMLSelectElement) {
+          e.preventDefault();
+          run();
+        }
+      }}
+    >
+      <label className="field">
+        <span className="field__label">Scenario</span>
+        <select value={scenarioId} onChange={(e) => setScenarioId(e.target.value)} disabled={running || scenarios.length === 0}>
+          {scenarios.length === 0 && <option value={scenarioId}>{loading ? "Loading scenarios…" : "No scenarios"}</option>}
+          {scenarios.map((s) => (
+            <option key={s.id} value={s.id}>{s.id.toUpperCase()} · {s.title}</option>
+          ))}
+        </select>
+      </label>
+      <div className="controls__row">
+        <button
+          type="button"
+          role="switch"
+          aria-checked={shieldOn}
+          className={`switch ${shieldOn ? "switch--on" : ""}`}
+          onClick={() => setShieldOn((v) => !v)}
+          disabled={running}
+        >
+          <span className="switch__track" aria-hidden="true"><span className="switch__knob" /></span>
+          Shield {shieldOn ? "on" : "off"}
+        </button>
+        <label className="field field--mode">
+          <span className="sr-only">Mode</span>
+          <select value={runMode} onChange={(e) => setMode(e.target.value as "replay" | "live")} disabled={running}>
+            <option value="replay">Replay</option>
+            {health?.live_llm_available && <option value="live">Live LLM</option>}
+          </select>
+        </label>
+      </div>
+      <button type="submit" className="btn btn--brand btn--block" disabled={!canRun}>
+        {running ? "Running…" : "Run scenario"}
+      </button>
+    </form>
+  );
 
   return (
     <div className="app">
@@ -72,15 +110,13 @@ export default function App() {
         <div className="brand">
           <svg className="brand__mark" viewBox="0 0 20 20" aria-hidden="true">
             <circle cx="10" cy="10" r="8.5" />
-            <circle cx="10" cy="10" r="5" />
             <path d="M1.5 10h17M10 1.5c2.6 2.4 2.6 14.6 0 17M10 1.5c-2.6 2.4-2.6 14.6 0 17" />
           </svg>
           <span className="brand__name">Passport</span>
           <span className="brand__tag">Every argument needs a passport</span>
         </div>
 
-        <nav className="tabs" aria-label="Views" style={{ "--tab-i": tabIndex } as CSSProperties}>
-          <span className="tabs__ink" aria-hidden="true" />
+        <nav className="tabs" aria-label="Views">
           {TABS.map((t) => (
             <button key={t.id} type="button" className={`tab ${tab === t.id ? "tab--on" : ""}`} aria-current={tab === t.id ? "page" : undefined} onClick={() => setTab(t.id)}>
               {t.label}
@@ -88,63 +124,9 @@ export default function App() {
           ))}
         </nav>
 
-        {tab === "run" && (
-          <form
-            className="controls"
-            onSubmit={(e) => {
-              e.preventDefault();
-              run();
-            }}
-            onKeyDown={(e) => {
-              // Browsers only submit on Enter from text inputs; make Enter on a select run too.
-              if (e.key === "Enter" && e.target instanceof HTMLSelectElement) {
-                e.preventDefault();
-                run();
-              }
-            }}
-          >
-            <label className="field field--scenario">
-              <span className="sr-only">Scenario</span>
-              <select value={scenarioId} onChange={(e) => setScenarioId(e.target.value)} disabled={running || scenarios.length === 0 || Boolean(loadError)}>
-                {scenarios.length === 0 && <option value={scenarioId}>{loading ? "Loading scenarios…" : "No scenarios"}</option>}
-                {scenarios.map((s) => (
-                  <option key={s.id} value={s.id}>{s.id.toUpperCase()} · {s.title}</option>
-                ))}
-              </select>
-            </label>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={shieldOn}
-              className={`shield ${shieldOn ? "shield--on" : "shield--off"}`}
-              onClick={() => setShieldOn((v) => !v)}
-              disabled={running || Boolean(loadError)}
-            >
-              <span className="shield__track" aria-hidden="true"><span className="shield__knob" /></span>
-              Shield {shieldOn ? "on" : "off"}
-            </button>
-            <label className="field field--mode">
-              <span className="sr-only">Mode</span>
-              <select value={runMode} onChange={(e) => setMode(e.target.value as "replay" | "live")} disabled={running || Boolean(loadError)}>
-                <option value="replay">Replay</option>
-                {health?.live_llm_available && <option value="live">Live LLM</option>}
-              </select>
-            </label>
-            <button type="submit" className="btn btn--brand" disabled={!canRun}>
-              {running ? "Running…" : "Run scenario"}
-            </button>
-          </form>
-        )}
-
-        <button type="button" className="theme" onClick={toggleTheme} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`} title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}>
-          <svg viewBox="0 0 20 20" aria-hidden="true">
-            {theme === "dark" ? <path d="M10 3v1.5M10 15.5V17M3 10h1.5M15.5 10H17M5 5l1 1M14 14l1 1M5 15l1-1M14 6l1-1M13 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" /> : <path d="M15.5 12.5A6.5 6.5 0 0 1 7.5 4.5a6.5 6.5 0 1 0 8 8z" />}
-          </svg>
-        </button>
-
         {health?.access_code_required && (
-          <label className="field code">
-            <span className="muted small">Demo code</span>
+          <label className="field field--code">
+            <span className="field__label">Demo code</span>
             <input
               type="password"
               value={code}
@@ -158,24 +140,35 @@ export default function App() {
         )}
       </header>
 
-      {loadError && (
-        <div className="banner" role="alert">
-          <span className="banner__dot" aria-hidden="true" />
-          <div className="banner__text">
-            <strong>Backend not reachable.</strong> <span className="muted">{loadError}</span>
-          </div>
-          <button type="button" className="btn btn--quiet" onClick={load} disabled={loading}>
-            {loading ? "Trying…" : "Retry"}
-          </button>
-        </div>
-      )}
-
-      {tab === "run" && <Legend />}
-
       <main>
-        {tab === "run" && <RunView state={state} request={scenario?.user_request ?? ""} onAnswer={answer} onRetry={run} canRun={canRun} offline={Boolean(loadError)} scenarios={scenarios} scenarioId={scenarioId} onPick={setScenarioId} shieldOn={shieldOn} />}
-        {tab === "score" && <Scoreboard />}
-        {tab === "audit" && <AuditView />}
+        {loadError ? (
+          <section className="offline" role="alert">
+            <Illustration scene="unplugged" className="offline__art" />
+            <h1 className="display">Waiting for the backend.</h1>
+            <p className="muted">{loadError} Start it with <code>make backend</code>, then try again.</p>
+            <button type="button" className="btn btn--brand" onClick={load} disabled={loading}>
+              {loading ? "Trying…" : "Retry"}
+            </button>
+          </section>
+        ) : (
+          <>
+            {tab === "run" && (
+              <RunView
+                state={state}
+                scenario={scenario}
+                controls={controls}
+                onAnswer={answer}
+                onRetry={run}
+                canRun={canRun}
+                scenarios={scenarios}
+                scenarioId={scenarioId}
+                onPick={setScenarioId}
+              />
+            )}
+            {tab === "score" && <Scoreboard />}
+            {tab === "audit" && <AuditView />}
+          </>
+        )}
       </main>
     </div>
   );

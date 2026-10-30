@@ -22,7 +22,7 @@ function ArgValue({ value }: { value: unknown }) {
 
   return (
     <span className="arg__body">
-      <span ref={ref} className={`arg__value ${open ? "" : "arg__value--clamp"}`}>{text}</span>
+      <span ref={ref} className={`arg__value ${open ? "" : "arg__value--clamp"}`}><span className="ink">{text}</span></span>
       {(clamped || open) && (
         <button type="button" className="link" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
           {open ? "Show less" : "Show full value"}
@@ -39,10 +39,13 @@ export function DecisionCard({ d, onEvidence }: Props) {
   const entries = Object.entries(d.args).sort(([a], [b]) => Number(passportByArg.has(b)) - Number(passportByArg.has(a)));
 
   return (
-    <article className={`card decision decision--${d.verdict.toLowerCase()}`} aria-label={`${d.tool}: ${d.verdict}`}>
+    <article className={`decision decision--${d.verdict.toLowerCase()} ${d.shield_on ? "" : "decision--unguarded"}`} aria-label={`Step ${d.step}, ${d.tool}: ${d.verdict}`}>
       <header className="decision__head">
-        <span className="decision__step">Step {d.step}</span>
-        <code className="decision__tool">{d.tool}</code>
+        <span className="decision__step" aria-hidden="true">{String(d.step).padStart(2, "0")}</span>
+        <span className="decision__id">
+          <span className="decision__kicker">Step {d.step} · tool call</span>
+          <code className="decision__tool">{d.tool}</code>
+        </span>
         <Stamp verdict={d.verdict} shieldOn={d.shield_on} executed={d.executed} approval={d.approval} />
       </header>
 
@@ -82,8 +85,8 @@ export function DecisionCard({ d, onEvidence }: Props) {
         <span className="decision__actions">
           {!d.shield_on && d.executed && d.verdict !== "ALLOW" && <span className="pill pill--bad">Shield off: it ran</span>}
           {evidence?.segment_id && (
-            <button type="button" className="btn btn--quiet" onClick={() => onEvidence(evidence)}>
-              Show evidence
+            <button type="button" className="btn btn--outline btn--sm" onClick={() => onEvidence(evidence)}>
+              Show evidence <span aria-hidden="true">→</span>
             </button>
           )}
         </span>
