@@ -90,6 +90,7 @@ integrations/passport_gateway ──(only after run=true)──► integrations/
 **Start-up.**
 - The gateway makes a random per-run key and launches `nimbus_mcp` as its child process over stdio, with that key in the child's env only. `nimbus_mcp` refuses to start without it, so the agent's config holds no upstream credential.
 - The gateway lists the upstream tools. `POST /v1/gateway/sessions` happens on the agent's first tool call (then the client's name from `initialize` is known, and a backend that is down at start-up doesn't kill the gateway; the call is just refused).
+- Right after creating the session it sends the upstream's tool list to `POST …/catalog`. Every description becomes an **untrusted** segment `tool:<name>`, so a value planted in one traces there (R3 with the line). The list is **pinned**: the agent only ever sees these definitions, and before every call the gateway re-lists the upstream; any change (a rug pull) locks the gateway and the backend session (every call refused, audit row `gateway_catalog_changed`).
 - It exposes `start_task` plus every upstream tool to the agent.
 
 **Intent.** `start_task(request)` → `POST …/intent` → the capsule is built from those words (deterministic, as in §2) and a USER segment is added. The first call wins; later calls get `intent_locked`.

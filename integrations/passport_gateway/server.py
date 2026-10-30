@@ -12,7 +12,7 @@ Run:  python integrations/passport_gateway/server.py            (stdio, for Clau
       python integrations/passport_gateway/server.py --http --port 8765   (MCP Inspector)
 Env:  PASSPORT_URL (default http://127.0.0.1:8000), PASSPORT_GATEWAY_TOKEN (required),
       PASSPORT_SHIELD (on|off, default on), PASSPORT_AGENT_NAME (default "Claude Desktop"),
-      NIMBUS_INBOX (default base)
+      NIMBUS_INBOX (default base), NIMBUS_POISON (demo: tool | rugpull, makes the upstream malicious)
 Logs go to stderr only (one line per call: tool, verdict, rule, run); never tokens or outputs.
 """
 
@@ -36,6 +36,10 @@ log = logging.getLogger("passport.gateway")
 
 NIMBUS_SERVER = Path(__file__).resolve().parents[1] / "nimbus_mcp" / "server.py"
 FAIL_CLOSED = "PASSPORT unreachable or refused, failing closed"
+RUG_PULL = (
+    "PASSPORT refused: the installed server changed its tool definitions after install "
+    "(possible rug pull). Every call is refused; check the server, then restart the client"
+)
 SESSION_LOST = "PASSPORT session lost (backend restarted or reset); restart the client. Failing closed"
 HTTP_TIMEOUT_S = 10.0
 
@@ -74,10 +78,15 @@ class Gateway:
         shield_on: bool = True,
         agent_name: str = "Claude Desktop",
         approval_wait_s: int = 40,
+        server_name: str = "nimbus-mcp",
         transport: httpx.AsyncBaseTransport | None = None,  # tests: the backend app over ASGI
     ) -> None:
         self.upstream = upstream
-        self.upstream_tools = {t.name: t for t in upstream_tools if t.name != START_TASK.name}
+        # Pinned at install: the agent only ever sees these definitions (a rug pull can't reach it).
+        self.upstream_tools = {t.name: shown_tool(t) for t in upstream_tools if t.name != START_TASK.name}
+        self.server_name = server_name
+        self.pinned_catalog = catalog_of(list(self.upstream_tools.values()))
+        self.locked = False  # the upstream changed its tool definitions: refuse everything
         self.passport_url = passport_url.rstrip("/")
         self.token = token
         self.shield_on = shield_on
@@ -110,7 +119,12 @@ class Gateway:
         if name not in self.upstream_tools:
             log.info("tool=%s verdict=UNKNOWN_TOOL run=False", name[:64])
             raise Refused(f"PASSPORT refused: unknown tool {name[:64]!r}")
+        if self.locked:
+            raise Refused(RUG_PULL)
         sid = await self._session(ctx)
+        # Before PASSPORT is even asked: if the server changed its tools since install, nothing runs
+        # and no decision is recorded as granted.
+        await self._check_catalog(sid)
         status, body = await self._post(
             f"/v1/gateway/sessions/{sid}/decide", {"tool": name, "args": args}, self.decide_timeout_s
         )
@@ -157,6 +171,21 @@ class Gateway:
             d["verdict"] == "REQUIRE_APPROVAL" and d.get("approval") == "approved"
         )
 
+    async def _check_catalog(self, sid: str) -> None:
+        """Re-list the upstream's tools; any change since install locks this gateway (rug pull)."""
+        current = catalog_of((await self.upstream.list_tools()).tools)
+        if current == self.pinned_catalog:
+            return
+        self.locked = True
+        log.info("upstream tool definitions changed since install: locked")
+        # Tell PASSPORT (it answers 409 catalog_changed, audits it and locks the session too).
+        await self._post(
+            f"/v1/gateway/sessions/{sid}/catalog",
+            {"server": self.server_name, "tools": current},
+            HTTP_TIMEOUT_S,
+        )
+        raise Refused(RUG_PULL)
+
     async def _start_task(self, ctx: Any, args: dict[str, Any]) -> types.CallToolResult:
         request = args.get("request")
         if set(args) != {"request"} or not isinstance(request, str) or not request.strip():
@@ -188,7 +217,17 @@ class Gateway:
         if status != 201 or not isinstance(data, dict) or not isinstance(data.get("session_id"), str):
             log.info("create_session failed status=%s", status)
             raise Refused(FAIL_CLOSED)
-        self.session_id = data["session_id"]
+        sid = data["session_id"]
+        # The installed tools' descriptions are untrusted content: PASSPORT labels them before any call.
+        status, _ = await self._post(
+            f"/v1/gateway/sessions/{sid}/catalog",
+            {"server": self.server_name, "tools": self.pinned_catalog},
+            HTTP_TIMEOUT_S,
+        )
+        if status != 200:
+            log.info("catalog report failed status=%s", status)
+            raise Refused(FAIL_CLOSED)
+        self.session_id = sid
         log.info("PASSPORT session %s (shield %s)", self.session_id, "on" if self.shield_on else "off")
         return self.session_id
 
@@ -206,6 +245,42 @@ class Gateway:
             return r.status_code, r.json()
         except ValueError:
             return r.status_code, None
+
+
+def catalog_of(tools: list[types.Tool]) -> list[dict[str, Any]]:
+    """The upstream's tools as /catalog wants them (contracts/README.md), in a stable order.
+
+    Every field the agent is shown goes in, so PASSPORT labels all of it and a change to any of it
+    is a rug pull. Fields not listed here are stripped before the agent sees the tool (shown_tool)."""
+    out = []
+    for t in tools:
+        if t.name == START_TASK.name:
+            continue
+        entry: dict[str, Any] = {
+            "name": t.name,
+            "description": t.description or "",
+            "input_schema": t.input_schema or {},
+        }
+        if t.title is not None:
+            entry["title"] = t.title
+        if t.annotations is not None:
+            entry["annotations"] = t.annotations.model_dump(mode="json", exclude_none=True)
+        if t.output_schema is not None:
+            entry["output_schema"] = t.output_schema
+        out.append(entry)
+    return sorted(out, key=lambda t: t["name"])
+
+
+def shown_tool(t: types.Tool) -> types.Tool:
+    """Only the fields catalog_of reports reach the agent (no icons, _meta, execution hints)."""
+    return types.Tool(
+        name=t.name,
+        title=t.title,
+        description=t.description,
+        input_schema=t.input_schema,
+        output_schema=t.output_schema,
+        annotations=t.annotations,
+    )
 
 
 def _code(body: Any) -> str | None:
@@ -259,9 +334,11 @@ def build_server(gateway: Gateway) -> Server:
     )
 
 
-def nimbus_params(inbox: str) -> StdioServerParameters:
+def nimbus_params(inbox: str, poison: str = "") -> StdioServerParameters:
     """The upstream as a child process. Its key exists only in its own environment."""
     env = {"NIMBUS_GATEWAY_KEY": secrets.token_hex(32), "NIMBUS_INBOX": inbox}
+    if poison:  # demo only: make the fake upstream malicious (nimbus_mcp NIMBUS_POISON)
+        env["NIMBUS_POISON"] = poison
     return StdioServerParameters(command=sys.executable, args=[str(NIMBUS_SERVER)], env=env)
 
 
@@ -275,7 +352,7 @@ async def serve(http_port: int | None) -> None:
         log.error("PASSPORT_SHIELD must be on or off")
         sys.exit(2)
     inbox = os.environ.get("NIMBUS_INBOX", "base")
-    async with Client(nimbus_params(inbox)) as upstream:
+    async with Client(nimbus_params(inbox, os.environ.get("NIMBUS_POISON", ""))) as upstream:
         tools = (await upstream.list_tools()).tools
         gateway = Gateway(
             upstream,

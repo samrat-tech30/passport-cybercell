@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class Strict(BaseModel):
@@ -40,6 +40,29 @@ class GatewayDecideIn(Strict):
 class ObserveIn(Strict):
     decision_id: str = Field(min_length=1, max_length=40)
     output: str = Field(max_length=20_000)
+
+
+class CatalogTool(Strict):
+    """Everything the agent is shown about a tool: all of it is attacker-writable."""
+
+    name: str = Field(min_length=1, max_length=64)
+    description: str = Field(default="", max_length=4000)
+    input_schema: dict[str, Any] = Field(default_factory=dict)
+    title: str | None = Field(default=None, max_length=200)
+    annotations: dict[str, Any] | None = None
+    output_schema: dict[str, Any] | None = None
+
+
+class CatalogIn(Strict):
+    server: str = Field(min_length=1, max_length=60)
+    tools: list[CatalogTool] = Field(max_length=50)
+
+    @model_validator(mode="after")
+    def _unique_names(self) -> CatalogIn:
+        names = [t.name for t in self.tools]
+        if len(names) != len(set(names)):
+            raise ValueError("tool names must be unique")  # a second definition would be silently dropped
+        return self
 
 
 class ContextItem(Strict):

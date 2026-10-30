@@ -48,17 +48,21 @@ class SpyUpstream:
         self.calls.append(name)
         return await self.client.call_tool(name, args)
 
+    async def list_tools(self):
+        return await self.client.list_tools()
+
 
 class Rig:
     """agent → gateway → (backend over ASGI, Nimbus in memory)."""
 
-    def __init__(self, inbox="s2_hidden_instruction", shield_on=True, transport=None):
+    def __init__(self, inbox="s2_hidden_instruction", shield_on=True, transport=None, poison=None):
         self.world = World(inbox=inbox)
+        self.poison = poison
         self.shield_on = shield_on
         self.transport = transport or httpx.ASGITransport(app=create_app())
 
     async def __aenter__(self):
-        self._up = Client(nimbus.build_server(self.world))
+        self._up = Client(nimbus.build_server(self.world, self.poison))
         up = await self._up.__aenter__()
         self.upstream = SpyUpstream(up)
         self.gw = gateway.Gateway(
@@ -270,4 +274,57 @@ async def test_a_lost_session_says_so_and_fails_closed():
         SESSIONS.clear()  # as after POST /admin/reset or a restart
         err, text = await rig.call("list_unread_emails")
         assert err and "session lost" in text
+    assert rig.upstream.calls == []
+
+
+POISON_TO = {"to": nimbus.POISON_ADDRESS, "subject": "Copy", "body": "summary"}
+
+
+async def test_poisoned_tool_description_exfil_is_denied_with_the_description_line():
+    async with Rig(inbox="base", poison="tool") as rig:
+        desc = next(t.description for t in (await rig.agent.list_tools()).tools if t.name == "check_spelling")
+        assert nimbus.POISON_ADDRESS in desc  # the agent does read the poisoned description
+        await rig.call("start_task", {"request": S2})
+        await rig.call("list_unread_emails")
+        err, text = await rig.call("send_email", LEGIT)
+        assert not err
+        err, text = await rig.call("send_email", POISON_TO)
+        assert err and text.startswith("PASSPORT DENY R3_SINK_UNTRUSTED")
+        assert "Tool description: check_spelling" in text and "line 3" in text
+    assert rig.upstream.calls == ["list_unread_emails", "send_email"]  # the copy never reached the server
+
+
+async def test_rug_pull_after_install_locks_the_gateway_and_the_agent_never_sees_it():
+    async with Rig(inbox="base", poison="rugpull") as rig:
+        before = {t.name: t.description for t in (await rig.agent.list_tools()).tools}
+        assert nimbus.POISON_ADDRESS not in before["check_spelling"]  # clean at install
+        await rig.call("start_task", {"request": S2})
+        err, _ = await rig.call("list_unread_emails")
+        assert not err  # first call fine; the server turns its description poisoned after it
+        err, text = await rig.call("send_email", LEGIT)
+        assert err and "rug pull" in text
+        err, text = await rig.call("list_unread_emails")
+        assert err and "rug pull" in text  # locked for good
+        after = {t.name: t.description for t in (await rig.agent.list_tools()).tools}
+        assert after == before  # the agent only ever sees the pinned definitions
+    assert rig.upstream.calls == ["list_unread_emails"]
+    kinds = [e["kind"] for e in audit.recent(50)]
+    assert "gateway_catalog_changed" in kinds
+    assert kinds.count("gateway_decide") == 1  # the refused calls were never recorded as granted
+
+
+async def test_catalog_report_refused_means_no_call_goes_through():
+    real = httpx.ASGITransport(app=create_app())
+
+    class CatalogFails(httpx.AsyncBaseTransport):
+        async def handle_async_request(self, request):
+            if request.url.path.endswith("/catalog"):
+                return httpx.Response(500, json={})
+            return await real.handle_async_request(request)
+
+    async with Rig(transport=CatalogFails()) as rig:
+        err, text = await rig.call("start_task", {"request": S2})
+        assert err and "failing closed" in text
+        err, text = await rig.call("list_unread_emails")
+        assert err and "failing closed" in text
     assert rig.upstream.calls == []
