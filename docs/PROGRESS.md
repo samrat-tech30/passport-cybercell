@@ -4,7 +4,7 @@
 
 **Last updated:** 2026-10-31 03:47 (Person B: G1, G2, G4 except the Claude Desktop trial, red-team + review fixes, pitch; all on main)
 **Live URLs:** frontend <…> · backend <…>
-**Next task:** Person A → G3 Gateway tab (feat/gateway-ui from main). Person B → Claude Desktop trial with the new gateway (last G4 item), then G5 pitch, E-1. Handoff: see "Handoff 05:30" below.
+**Next task:** Person A → G3 Gateway tab (feat/gateway-ui from main). Person B → E-1 (rehearse, backup video, slides), 08:00 go/no-go. Handoff: see "Handoff 05:30" below.
 
 ## Handoff 05:30 (Person B → Person A)
 - On main: G1 backend gateway API + G2 MCP side. Both checked: backend ruff + 172 tests + eval (9/9 → 0/9 attacks, 7/7 legit, 0 popups) + frontend build + guard hook; `make gateway-test` 23 passed (incl. 4 real e2e).
@@ -20,7 +20,7 @@
 
 ## Done (G4 partly, Person B, feat/gateway-e2e)
 - `integrations/tests/test_e2e.py`: uvicorn on a free port + the gateway over real stdio (4 tests, ~30–36 s on Windows); `integrations/README.md` (setup Win/macOS, Claude Desktop config with no upstream credential, Store-install path, Inspector, demo script, limits); RESULTS.md "Gateway" table from the 21-test run
-- **Left in G4:** try the new gateway in Claude Desktop by hand and write what happened in AI-LOG.md (the V2-E trial is the only one so far); MCP Inspector not run
+- Claude Desktop trial done (AI-LOG.md): start_task + read ALLOW + Priya send ALLOW; Claude refused the hidden instruction itself, so the DENY is demoed with fooled_agent.py. MCP Inspector not run
 
 ## Done (G2 MCP side, Person B, feat/gateway-mcp)
 - `integrations/nimbus_mcp/server.py`: the fake Gmail (World tools over stdio); exits with "only reachable through PASSPORT" unless `NIMBUS_GATEWAY_KEY` ≥ 32 chars
