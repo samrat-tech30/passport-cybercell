@@ -1,0 +1,30 @@
+# dependencies and builds
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+coverage/
+
+# python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# runtime data (SQLite demo database)
+backend/var/*
+!backend/var/.gitkeep
+
+# env files (only .env.example is committed)
+.env
+.env.*
+!.env.example
+
+# local artefacts
+*.log
+.DS_Store
+screenshots/
+test-results/
+playwright-report/
+.playwright-mcp/

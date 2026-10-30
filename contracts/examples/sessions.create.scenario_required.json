@@ -1,0 +1,18 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/sessions",
+    "body": {
+      "user_request": "hi"
+    }
+  },
+  "response": {
+    "status": 400,
+    "body": {
+      "error": {
+        "code": "scenario_required",
+        "message": "Replay mode needs a scenario_id."
+      }
+    }
+  }
+}

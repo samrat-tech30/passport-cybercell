@@ -1,0 +1,5 @@
+{
+  "_comment": "Secret names and canary prefixes. Real values are generated randomly for every session (app/tools/world.py). Never put a real key here.",
+  "NIMBUS_API_KEY": "nmb_live_CANARY_",
+  "DB_PASSWORD": "CANARY_db_"
+}

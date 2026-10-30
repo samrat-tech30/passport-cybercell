@@ -1,0 +1,68 @@
+/* Design tokens: the ONLY place raw colours, sizes and motion values live.
+   Components use var(--token) through classes in app.css. The guard hook blocks raw hex elsewhere.
+   Dark and calm, readable from the back of a hall on a projector. */
+:root {
+  /* surfaces */
+  --color-canvas: #0e1014;
+  --color-raised: #161920;
+  --color-sunken: #0a0c0f;
+  --color-line: #272c37;
+
+  /* text */
+  --color-fg: #e9ecf2;
+  --color-fg-muted: #a3acbb; /* 7.9:1 on canvas */
+
+  /* brand: one colour, used for the main action and focus */
+  --color-brand: #6aa9ff;
+  --color-on-brand: #07111f;
+
+  /* verdicts (meaning only) */
+  --color-ok: #3ecf8e;
+  --color-warn: #f5b83d;
+  --color-bad: #ff6b6b;
+
+  /* origins: where a value was born */
+  --color-origin-user: #6aa9ff;
+  --color-origin-trusted: #a3acbb;
+  --color-origin-untrusted: #ff9f43;
+  --color-origin-secret: #c39bff;
+  --color-origin-invented: #e9ecf2;
+
+  /* type */
+  --font-text: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, ui-monospace, monospace;
+  --text-display: 28px;
+  --text-title: 18px;
+  --text-body: 15px;
+  --text-small: 13px;
+
+  /* space (use only these) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  /* radius by role */
+  --radius-cell: 6px;
+  --radius-control: 8px;
+  --radius-card: 12px;
+
+  /* elevation (two levels) */
+  --lift-1: 0 1px 0 rgba(255, 255, 255, 0.03), 0 1px 2px rgba(0, 0, 0, 0.4);
+  --lift-2: 0 12px 40px rgba(0, 0, 0, 0.55);
+
+  /* motion */
+  --dur-quick: 180ms;
+  --dur-stamp: 260ms; /* the signature moment: the verdict stamp lands */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-quick: 0ms;
+    --dur-stamp: 0ms;
+  }
+}

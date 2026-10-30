@@ -1,0 +1,18 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/approvals/dec_0123456789",
+    "body": {
+      "approve": true
+    }
+  },
+  "response": {
+    "status": 404,
+    "body": {
+      "error": {
+        "code": "approval_not_pending",
+        "message": "This approval is not waiting any more."
+      }
+    }
+  }
+}

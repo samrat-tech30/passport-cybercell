@@ -1,0 +1,41 @@
+# PASSPORT policy-as-code. Loaded and validated at start-up (app/gate/policy.py).
+# Change a rule here, not in Python, whenever you can. Every change needs a test in tests/.
+version: 1
+
+# Which tools each assistant role may use at all (R1_PROFILE).
+profiles:
+  office_assistant: [list_unread_emails, read_email, send_email, read_file, pay_invoice]
+  # read_secret and delete_file are deliberately NOT here: "unauthorised sensitive data" and
+  # "tool beyond permission" scenarios are denied by profile, however they are phrased.
+default_profile: office_assistant
+
+# Sink arguments steer WHERE an action goes or WHAT it touches. Their values must have a passport.
+sinks:
+  send_email: [to]
+  read_file: [path]
+  delete_file: [path]
+  read_secret: [key]
+  pay_invoice: [account, amount_inr]
+
+# Sink arguments that may legitimately come from a document (an invoice amount):
+# untrusted origin => ask the user instead of deny.
+soft_sinks:
+  pay_invoice: [amount_inr]
+
+# Tools that send data out of the company.
+egress: [send_email, pay_invoice]
+
+# Tools that always need a human yes when the shield is on.
+high_impact: [pay_invoice, delete_file]
+
+# Risk score per rule (0-100). The UI sorts approvals by risk.
+risk:
+  R0_FAIL_CLOSED: 100
+  R1_PROFILE: 80
+  R2_CANARY: 100
+  R3_SINK_UNTRUSTED: 90
+  R4_SECRET_EGRESS: 90
+  R5_SINK_INVENTED: 70
+  R6_OUT_OF_INTENT: 60
+  R7_HIGH_IMPACT: 40
+  R8_TRIFECTA: 60

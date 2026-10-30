@@ -1,0 +1,17 @@
+{
+  "request": {
+    "method": "GET",
+    "path": "/health",
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "status": "ok",
+      "version": "0.1.0",
+      "env": "test",
+      "live_llm_available": false,
+      "access_code_required": false
+    }
+  }
+}

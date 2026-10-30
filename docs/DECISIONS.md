@@ -1,0 +1,19 @@
+# Decisions
+
+One line each: `date — decision — why — what we gave up`. Never delete a line; add a new one if a decision changes.
+
+- 2026-10-30 — Track: AgentShield (AI-agent security) — best before/after demo, newest threat, team built an agent at the TCS hackathon — gave up the TrustLens India-scam story (reused in v2-A)
+- 2026-10-30 — Core idea: per-argument provenance ("passport") checked deterministically before every tool call — survives rewording/translation; LLM classifiers can be injected — gave up semantic understanding of text
+- 2026-10-30 — No LangChain/LangGraph in the core; plain Python agent loop — the gate is the product, frameworks add learning time and version risk tonight — answer "does it integrate?" with `POST /v1/decide` (+ MCP gateway as stretch)
+- 2026-10-30 — Backend FastAPI + Pydantic v2; DB SQLite with SQL migrations — zero setup, one file, enough for a demo — no multi-instance scaling
+- 2026-10-30 — Frontend React + Vite + TypeScript, plain CSS tokens, no UI kit/Tailwind/router — fewer moving parts, full control of the look — more CSS by hand
+- 2026-10-30 — Frontend and backend deployed separately from one repo; frontend calls backend directly with a CORS allowlist — matches "deploy at different servers" — must set ALLOWED_ORIGINS and VITE_API_URL correctly
+- 2026-10-30 — Live updates via Server-Sent Events, not WebSockets — one direction is all we need, works through proxies, auto-reconnect — no client→server messages over the stream (approvals use POST)
+- 2026-10-30 — Replay mode (scripted plan per scenario) as the default demo mode — no Wi-Fi/LLM dependence, reproducible eval; the gate still runs live — must say openly that the agent plan is recorded
+- 2026-10-30 — Naive assistant persona that follows instructions found in documents — makes the shield-OFF attack reproducible; realistic for many assistants — the live model may still refuse sometimes
+- 2026-10-30 — Intent capsule built by regex + keyword patterns, no LLM — can't be injected — misses unusual phrasings (falls back to R6 approval)
+- 2026-10-30 — Invoice amount is a "soft sink" (untrusted → ask, not deny) — real invoices state the amount — the user must check the amount
+- 2026-10-30 — Naming an email address in the request unlocks send_email; the word "email" alone only unlocks reading — "summarise my emails" must not let the agent send
+- 2026-10-30 — Canary secrets random per session and redacted everywhere — a fixed fake key could still be logged/committed — none
+- 2026-10-30 — Audit log: SHA-256 hash chain in SQLite, no blockchain — tamper-evident, simple — truncation of the tail not detected by the chain alone
+- 2026-10-30 — Added R8_TRIFECTA (secret + untrusted + egress → ask); v2 rules renumbered R9–R12 (the earlier build-spec doc said R8–R11) — covers paraphrased secrets — one more approval in that rare case

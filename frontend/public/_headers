@@ -1,0 +1,7 @@
+# Security headers for static hosts that read this file (Netlify, Cloudflare Pages).
+# On Vercel, frontend/vercel.json sets the same headers.
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: no-referrer
+  Permissions-Policy: camera=(), microphone=(), geolocation=()

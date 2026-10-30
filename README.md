@@ -56,4 +56,3 @@ Two services from this one repo: backend root directory `backend/` (Docker), fro
 
 ## Credits
 Builds on published ideas: CaMeL (Google DeepMind), FIDES (Microsoft), PACT/ARGUS (argument-level provenance), Invariant Labs' MCP tool-poisoning research, OWASP Top 10 for LLM Applications. What's ours: `docs/PITCH.md`. AI use: `docs/AI-LOG.md`.
-# passport-cybercell

@@ -1,0 +1,657 @@
+/* Component styles. Values come from tokens.css only (no raw colours here). */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--color-canvas);
+  color: var(--color-fg);
+  font-family: var(--font-text);
+  font-size: var(--text-body);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+code,
+.mono {
+  font-family: var(--font-mono);
+}
+
+.muted {
+  color: var(--color-fg-muted);
+}
+
+.small {
+  font-size: var(--text-small);
+}
+
+.title {
+  font-size: var(--text-title);
+  font-weight: 600;
+  margin: 0 0 var(--space-2);
+}
+
+.display {
+  font-size: var(--text-display);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  margin: 0 0 var(--space-1);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+/* ---------- layout ---------- */
+.app {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+  padding: var(--space-3) var(--space-5);
+  border-bottom: 1px solid var(--color-line);
+  background: var(--color-sunken);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.brand__mark {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--color-brand);
+  border-radius: var(--radius-cell);
+}
+
+.brand__name {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.tabs {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.tab {
+  background: none;
+  border: 0;
+  color: var(--color-fg-muted);
+  font: inherit;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+}
+
+.tab--on {
+  color: var(--color-fg);
+  background: var(--color-raised);
+}
+
+.controls {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.field select,
+.field input {
+  background: var(--color-raised);
+  color: var(--color-fg);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-control);
+  padding: var(--space-2) var(--space-3);
+  font: inherit;
+  min-height: 40px;
+  max-width: 420px;
+}
+
+.code {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+main {
+  flex: 1;
+}
+
+.run {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr) minmax(260px, 340px);
+  gap: var(--space-5);
+  padding: var(--space-5);
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .run {
+    grid-template-columns: 1fr;
+  }
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-height: 300px;
+}
+
+.page {
+  padding: var(--space-6) var(--space-5);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+/* ---------- surfaces ---------- */
+.card {
+  background: var(--color-raised);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+  padding: var(--space-4);
+  box-shadow: var(--lift-1);
+}
+
+.card p {
+  margin: 0 0 var(--space-2);
+}
+
+.request {
+  font-size: var(--text-title);
+}
+
+.list {
+  margin: 0;
+  padding-left: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.empty {
+  border: 1px dashed var(--color-line);
+  border-radius: var(--radius-card);
+  padding: var(--space-7) var(--space-5);
+  text-align: center;
+}
+
+.done {
+  padding-left: var(--space-2);
+}
+
+/* ---------- buttons ---------- */
+.btn {
+  font: inherit;
+  font-weight: 600;
+  min-height: 40px;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-control);
+  border: 1px solid var(--color-line);
+  background: var(--color-raised);
+  color: var(--color-fg);
+  cursor: pointer;
+  transition: transform var(--dur-quick) var(--ease-out);
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn--brand {
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+  border-color: var(--color-brand);
+}
+
+.btn--danger {
+  background: var(--color-bad);
+  color: var(--color-on-brand);
+  border-color: var(--color-bad);
+}
+
+.btn--quiet {
+  background: none;
+  font-weight: 500;
+  min-height: 32px;
+  padding: var(--space-1) var(--space-3);
+}
+
+.shield {
+  font: inherit;
+  font-weight: 700;
+  min-height: 40px;
+  padding: var(--space-2) var(--space-4);
+  border-radius: 999px;
+  cursor: pointer;
+  border: 2px solid currentColor;
+  background: none;
+}
+
+.shield--on {
+  color: var(--color-ok);
+}
+
+.shield--off {
+  color: var(--color-bad);
+}
+
+/* ---------- decision cards ---------- */
+.decision {
+  border-left: 4px solid var(--color-line);
+}
+
+.decision--allow {
+  border-left-color: var(--color-ok);
+}
+
+.decision--require_approval {
+  border-left-color: var(--color-warn);
+}
+
+.decision--deny {
+  border-left-color: var(--color-bad);
+}
+
+.decision__head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.decision__step {
+  color: var(--color-fg-muted);
+  font-size: var(--text-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.decision__tool {
+  font-size: var(--text-title);
+  font-weight: 600;
+}
+
+.decision__msg {
+  font-size: var(--text-body);
+  margin: var(--space-3) 0 !important;
+}
+
+.decision__foot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.rules {
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  color: var(--color-fg-muted);
+  margin-right: auto;
+}
+
+/* The signature element: the passport stamp */
+.stamp {
+  margin-left: auto;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: var(--text-small);
+  padding: var(--space-1) var(--space-3);
+  border: 2px solid currentColor;
+  border-radius: var(--radius-cell);
+  transform: rotate(-4deg);
+  animation: stamp var(--dur-stamp) var(--ease-out);
+}
+
+.stamp--ok {
+  color: var(--color-ok);
+}
+
+.stamp--warn {
+  color: var(--color-warn);
+}
+
+.stamp--bad {
+  color: var(--color-bad);
+}
+
+.stamp--ghost {
+  color: var(--color-fg-muted);
+  border-style: dashed;
+  transform: none;
+  animation: none;
+}
+
+@keyframes stamp {
+  from {
+    transform: rotate(-4deg) scale(1.6);
+    opacity: 0;
+  }
+  to {
+    transform: rotate(-4deg) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Argument chips coloured by where the value was born */
+.args {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.decision,
+.approval {
+  container-type: inline-size;
+}
+
+.arg {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: baseline;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-cell);
+  background: var(--color-sunken);
+  border: 1px solid var(--color-line);
+}
+
+.arg__name {
+  font-family: var(--font-mono);
+  color: var(--color-fg-muted);
+  font-size: var(--text-small);
+}
+
+.arg__value {
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+.arg__origin {
+  grid-column: 2;
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+
+/* Wide cards: origin label on the same line, right-aligned. Narrow (projector): under the value. */
+@container (min-width: 620px) {
+  .arg {
+    grid-template-columns: 90px minmax(0, 1fr) auto;
+  }
+  .arg__origin {
+    grid-column: auto;
+    white-space: nowrap;
+    text-align: right;
+  }
+}
+
+.origin--user {
+  border-color: var(--color-origin-user);
+}
+.origin--user .arg__origin {
+  color: var(--color-origin-user);
+}
+.origin--trusted .arg__origin {
+  color: var(--color-origin-trusted);
+}
+.origin--untrusted {
+  border-color: var(--color-origin-untrusted);
+}
+.origin--untrusted .arg__origin {
+  color: var(--color-origin-untrusted);
+}
+.origin--secret {
+  border-color: var(--color-origin-secret);
+}
+.origin--secret .arg__origin {
+  color: var(--color-origin-secret);
+}
+.origin--model_invented {
+  border-style: dashed;
+  border-color: var(--color-origin-invented);
+}
+
+/* ---------- pills, errors ---------- */
+.pill {
+  display: inline-block;
+  font-size: var(--text-small);
+  font-weight: 600;
+  padding: 2px var(--space-2);
+  border-radius: 999px;
+  border: 1px solid var(--color-line);
+  color: var(--color-fg-muted);
+}
+
+.pill--ok {
+  color: var(--color-ok);
+  border-color: var(--color-ok);
+}
+
+.pill--bad {
+  color: var(--color-bad);
+  border-color: var(--color-bad);
+}
+
+.error {
+  color: var(--color-bad);
+  margin: 0;
+}
+
+.banner {
+  padding: var(--space-3) var(--space-5);
+  border-bottom: 1px solid var(--color-line);
+}
+
+.ok {
+  color: var(--color-ok);
+  font-weight: 600;
+}
+
+.bad {
+  color: var(--color-bad);
+  font-weight: 600;
+}
+
+/* ---------- attacker panel ---------- */
+.attacker--hit {
+  border-color: var(--color-bad);
+  background: color-mix(in srgb, var(--color-bad) 10%, var(--color-raised));
+}
+
+/* ---------- dialogs ---------- */
+dialog {
+  color: var(--color-fg);
+  background: var(--color-raised);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--lift-2);
+  padding: var(--space-5);
+}
+
+dialog::backdrop {
+  background: color-mix(in srgb, var(--color-sunken) 75%, transparent);
+}
+
+.drawer {
+  width: min(880px, 92vw);
+  max-height: 86dvh;
+}
+
+.drawer__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.source {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  background: var(--color-sunken);
+  border-radius: var(--radius-control);
+  border: 1px solid var(--color-line);
+  max-height: 60dvh;
+  overflow: auto;
+}
+
+.source__line {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  gap: var(--space-3);
+  padding: 2px var(--space-3);
+}
+
+.source__line--hit {
+  background: color-mix(in srgb, var(--color-origin-untrusted) 18%, transparent);
+  outline: 1px solid var(--color-origin-untrusted);
+}
+
+.source__no {
+  color: var(--color-fg-muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.source__line .pill {
+  align-self: start;
+  white-space: nowrap;
+}
+
+.source__text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.approval {
+  width: min(560px, 92vw);
+}
+
+.approval__list {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-4) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.approval__why {
+  margin: 0 0 var(--space-3);
+  padding-left: var(--space-4);
+}
+
+.approval__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+/* ---------- scoreboard + audit ---------- */
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.metric__pair {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  font-size: var(--text-display);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.metric__off {
+  color: var(--color-bad);
+}
+
+.metric__on {
+  color: var(--color-ok);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-small);
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-line);
+  vertical-align: top;
+}
+
+.table th {
+  color: var(--color-fg-muted);
+  font-weight: 600;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}

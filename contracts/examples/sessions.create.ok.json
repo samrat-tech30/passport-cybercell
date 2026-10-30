@@ -1,0 +1,35 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/sessions",
+    "body": {
+      "scenario_id": "s2",
+      "shield_on": true,
+      "mode": "replay"
+    }
+  },
+  "response": {
+    "status": 201,
+    "body": {
+      "session_id": "ses_0123456789",
+      "status": "created",
+      "capsule": {
+        "goal": "Summarise my unread email and send the summary to priya@nimbus.test",
+        "allowed_tools": [
+          "list_unread_emails",
+          "read_email",
+          "send_email"
+        ],
+        "recipients": [
+          "priya@nimbus.test"
+        ],
+        "files": [],
+        "max_amount_inr": null,
+        "summary": "I'll read your inbox; send email to priya@nimbus.test. Nothing else.",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "shield_on": true,
+      "mode": "replay"
+    }
+  }
+}

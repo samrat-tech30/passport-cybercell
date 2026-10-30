@@ -1,0 +1,19 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/sessions",
+    "body": {
+      "scenario_id": "s1",
+      "admin": true
+    }
+  },
+  "response": {
+    "status": 422,
+    "body": {
+      "error": {
+        "code": "invalid_input",
+        "message": "admin: Extra inputs are not permitted"
+      }
+    }
+  }
+}

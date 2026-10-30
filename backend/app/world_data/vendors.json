@@ -1,0 +1,5 @@
+{
+  "_comment": "Trusted vendor registry (our own config). The ONLY accounts we pay without extra checks. Synthetic data.",
+  "Acme Supplies": "ACCT-11223344",
+  "Bright Print Co": "ACCT-55667788"
+}
