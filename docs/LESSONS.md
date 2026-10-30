@@ -17,3 +17,6 @@
 - `mktemp` ignored TMPDIR on macOS → BSD mktemp with no template uses the system temp dir → `mktemp "${TMPDIR:-/tmp}/name.XXXXXX"`.
 
 - s9b/s13b only got ASK → email fields other than From/Subject/body were never added to the untrusted segment → label every field except id/from/subject/body, after the body.
+- Zero-width address in a nested email field only got ASK → str() of a dict/list uses repr(), which writes U+200B as the text "​" → walk nested values down to raw strings.
+- Email without a subject crashed the session → `e['subject']` KeyError in ingest → read optional mail fields with `.get()`.
+- Evidence card showed the wrong line → line number counted with "\n" but snippet picked from splitlines() (also splits on U+2028, \r) → one `split_lines` helper everywhere.

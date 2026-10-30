@@ -16,16 +16,29 @@ from app.tools.world import World
 _EMAIL_CORE = ("id", "from", "subject", "body")
 
 
+def _leaves(value: Any) -> list[str]:
+    """The raw strings inside a value, nested dicts (keys too) and lists walked. Never str() a dict or a
+    list: repr() writes a zero-width space as the text "\\u200b", so the value the agent reads (real
+    characters) would match nothing here."""
+    if isinstance(value, dict):
+        return [s for k, v in value.items() for s in (str(k), *_leaves(v))]
+    if isinstance(value, (list, tuple)):
+        return [s for v in value for s in _leaves(v)]
+    return [] if value is None else [str(value)]
+
+
+def _text(value: Any) -> str:
+    return "\n".join(_leaves(value))
+
+
 def _extra_fields(e: dict[str, Any]) -> str:
     """Every other field the agent can see (Reply-To, Cc, attachment names...) as extra lines AFTER the
     body, so body line numbers never move. Empty string when there are none."""
     # Everything except the core fields, not an allowlist: a header nobody planned for is still labelled.
-    lines = []
-    for key, value in e.items():
-        if key in _EMAIL_CORE:
-            continue
-        items = value if isinstance(value, list) else [value]
-        lines.append(f"{key}: " + ", ".join(str(v) for v in items))
+    # One line per string, so 1000 attachment names don't make one line too long for the disguise views.
+    lines = [
+        f"{key}: {leaf}" for key, value in e.items() if key not in _EMAIL_CORE for leaf in _leaves(value)
+    ]
     return "\n\n" + "\n".join(lines) if lines else ""
 
 
@@ -36,9 +49,12 @@ class SegmentStore:
         self.revealed: set[str] = set()  # secret names the agent has actually seen
 
     def add(self, seg_id: str, source: str, trust: Trust, text: str, hidden: bool = False) -> Segment:
-        for s in self.items:
-            if s.id == seg_id:
-                return s
+        same_id = [s for s in self.items if s.id == seg_id or s.id.startswith(f"{seg_id}#")]
+        for s in same_id:
+            if s.text == str(text) and s.trust == trust:
+                return s  # the same content read twice (list, then read_email)
+        if same_id:  # same id, different text (a sender-chosen id?): label it too, never drop it
+            seg_id = f"{seg_id}#{len(same_id) + 1}"
         seg = Segment(id=seg_id, source=source, trust=trust, text=str(text), hidden=hidden)
         self.items.append(seg)
         if trust == Trust.UNTRUSTED:
@@ -49,8 +65,12 @@ class SegmentStore:
         return next((s for s in self.items if s.id == seg_id), None)
 
     def _add_email(self, e: dict[str, Any]) -> None:
-        text = f"From: {e['from']}\nSubject: {e['subject']}\n\n{e['body']}" + _extra_fields(e)
-        self.add(f"email:{e['id']}", f"Email #{e['id']} from {e['from']}", Trust.UNTRUSTED, text)
+        # .get(): an email without a subject is normal mail, not a reason to crash the session.
+        sender = _text(e.get("from"))
+        text = (
+            f"From: {sender}\nSubject: {_text(e.get('subject'))}\n\n{_text(e.get('body'))}" + _extra_fields(e)
+        )
+        self.add(f"email:{e.get('id')}", f"Email #{e.get('id')} from {sender}", Trust.UNTRUSTED, text)
 
     def ingest(self, tool: str, args: dict[str, Any], output: Any) -> None:
         """Label a tool's output. Called by the gate right after the tool runs."""

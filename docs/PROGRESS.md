@@ -24,7 +24,7 @@
 - Eval (`python -m app.eval_runner --no-save`): attacks 16/16 → 0/16, legit 14/14 → 14/14, 0 popups on clean legit tasks. After the email-fields fix only s10 is stopped by an approval the scenario rejects; s9b and s13b are DENY R3. PITCH/RESULTS numbers not updated yet.
 
 ## Tasks for M2 (gaps found by Part 1 attacks, THREAT-MODEL §5)
-- [x] Label every email field (Reply-To, Cc, attachment names) in `segments._add_email`: s9b and s13b are now DENY R3 (tests/test_segments.py). Done by Person A on feat/email-fields.
+- [x] Label every email field (Reply-To, Cc, attachment names) in `segments._add_email`: s9b and s13b are now DENY R3 (tests/test_segments.py). Done by Person A on feat/email-fields. Red-teamed: 6 findings (F1–F6) fixed, 31 tests in tests/test_redteam_email_fields.py.
 - [ ] Split values across segments (s10): trace a value that is the join of pieces from two untrusted segments, or say why not in DECISIONS.md.
 - [ ] Reply false positive: a trusted contacts directory (like vendors.json) so "Reply to Rahul's email" works without typing the address. Needs a scenario + test.
 - [ ] Optional: flag ASCII look-alike sender domains (vs vendor registry / company domain) in the approval popup message only, never in the verdict.
@@ -39,6 +39,7 @@
 - <slice, who, which files, what's left>
 
 ## Known bugs
+- (feat/v2b-disguise) A single line over 20,000 characters (`disguise.MAX_VIEW_LEN`) only gets the clean() view, so "at"/"dot" and base64 aren't decoded on it: ASK (R5), not DENY. Split long lines into overlapping windows. Found by red-team F3; the email-attachment case is fixed.
 - none known
 
 ## Ideas / later

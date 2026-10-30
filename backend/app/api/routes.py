@@ -19,6 +19,7 @@ from app.db import audit, repo
 from app.eval_runner import run_eval
 from app.gate.capsule import build_capsule
 from app.gate.decide import GateContext, decide
+from app.gate.disguise import split_lines
 from app.gate.policy import load_policy
 from app.gate.segments import SegmentStore
 from app.scenarios import load_scenarios
@@ -152,7 +153,7 @@ def segment(session_id: str, segment_id: str) -> dict[str, Any]:
         "source": seg.source,
         "trust": seg.trust.value,
         "text": text,
-        "lines": text.splitlines(),
+        "lines": split_lines(text),
     }
 
 

@@ -186,9 +186,15 @@ def views(line: str) -> list[str]:
     return list(_all_views(line))
 
 
+def split_lines(text: str) -> list[str]:
+    """Lines split on \\n only. splitlines() also splits on U+2028, \\r, \\x0c..., so an attacker could make
+    the line number and the line shown as evidence disagree. Tracer, disguise and the evidence API all use this."""
+    return text.split("\n")
+
+
 def find_disguised(text: str, value: object, amount: str | None) -> tuple[int, str] | None:
     """(1-based line, ORIGINAL line) where value appears in disguise, or None."""
-    lines = text.splitlines() or [text]
+    lines = split_lines(text)
     if amount is not None:
         # Spaced views only, so squashed text can't join two numbers. Like the exact tracer, a comma or
         # space between digits is read as a thousands separator ("14 99" -> 1499): stricter, never looser.

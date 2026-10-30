@@ -15,7 +15,7 @@ import unicodedata
 from typing import Any
 
 from app.contracts import Evidence, Origin, Segment, Trust
-from app.gate.disguise import find_disguised, views
+from app.gate.disguise import find_disguised, split_lines, views
 from app.gate.segments import SegmentStore
 
 ORDER = (Trust.USER, Trust.TRUSTED, Trust.SECRET, Trust.UNTRUSTED)
@@ -49,7 +49,7 @@ def find_in_segment(seg: Segment, value: Any, whole: bool = False) -> tuple[int,
     """Return (1-based line, original line text) of the first occurrence, or None.
 
     whole=True: only a whole value counts (no address or path characters glued on either side)."""
-    lines = seg.text.splitlines() or [seg.text]
+    lines = split_lines(seg.text)
     amount = as_amount(value)
     if amount is not None:
         pattern = re.compile(rf"(?<!\d){re.escape(amount)}(?!\d)")
