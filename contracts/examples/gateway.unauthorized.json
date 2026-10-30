@@ -1,0 +1,19 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/v1/gateway/sessions",
+    "body": {
+      "agent_name": "x",
+      "client": "y"
+    }
+  },
+  "response": {
+    "status": 401,
+    "body": {
+      "error": {
+        "code": "gateway_unauthorized",
+        "message": "Missing or wrong gateway token."
+      }
+    }
+  }
+}

@@ -14,6 +14,13 @@ File: `$DATA_DIR/passport.db` (default `backend/var/passport.db`). WAL mode, for
 | `audit_log` | tamper-evident chain | seq, ts, session_id, kind, payload (canonical JSON), prev_hash, hash |
 | `eval_runs` | scoreboard results | id, ts, summary_json, rows_json |
 
+## Tables (002_gateway)
+| Table | Purpose | Key columns |
+|---|---|---|
+| `gateway_sessions` | sessions created by the MCP gateway (`/v1/gateway/sessions`) | session_id (→ sessions.id, cascade), agent_name, client |
+
+A gateway session's `sessions` row has `mode = 'live'` (the 001 CHECK can't be widened without a table rebuild) and `user_request = ''` until the agent's first `start_task`. `repo.get_session` reports `mode: "gateway"` when a `gateway_sessions` row exists (DECISIONS.md).
+
 ## Audit chain
 `hash = SHA-256(prev_hash | ts | session_id | kind | payload)`, genesis = 64 zeros. `GET /audit/verify` walks the chain and reports the first broken row.
 

@@ -1,0 +1,17 @@
+{
+  "request": {
+    "method": "POST",
+    "path": "/v1/gateway/sessions",
+    "body": {
+      "agent_name": "Claude Desktop",
+      "client": "claude-ai",
+      "shield_on": true
+    }
+  },
+  "response": {
+    "status": 201,
+    "body": {
+      "session_id": "ses_0123456789"
+    }
+  }
+}
