@@ -9,7 +9,7 @@ Numbers only from RESULTS.md. Facts only from FACTS.md. Replay mode on stage (sa
 | 0:35–1:00 | M3 | Agent tab, S2, **shield off**, Run | "The user asks for an inbox summary to Priya. Email #3 hides one white line. Watch the right panel." → attacker panel shows the leaked API key (redacted canary). |
 | 1:00–1:45 | M3 | Same S2, **shield on**, Run → Show evidence | "Same email, same agent. Every argument must show a passport. Priya came from your words: allowed. audit-team@evil.test exists only in Email #3, line 13: denied. Here's the hidden line. Rewording or translating it changes nothing: the address still wasn't born in your words." |
 | 1:45–2:05 | M3 | S5 approval popup → Reject/Approve | "Payments always ask, and show only the risky value and where it came from. No answer in two minutes means no." |
-| 2:05–2:25 | M2 | Scoreboard tab → Run evaluation | "Every scenario, shield off and on: attacks that got through 9 of 9 → 0 of 9, legitimate tasks 7 of 7 kept, zero popups on clean tasks. Measured, and our test suite is in the repo." (+ v2 result if built) |
+| 2:05–2:25 | M2 | Scoreboard tab → Run evaluation | "Every scenario, shield off and on: attacks that got through 16 of 16 → 0 of 16, legitimate tasks 14 of 14 kept, zero popups on clean tasks. Measured, and our test suite is in the repo." (+ v2 result if built) |
 | 2:25–2:45 | M1 | Audit tab, `make tamper` in a terminal, Verify | "Every decision is in a hash chain. Change one row and verification breaks at that row." |
 | 2:45–3:00 | M4 | Closing slide | "Don't secure the prompt. Check the passport of every argument. Any framework can call `/v1/decide` before running a tool." |
 
@@ -24,7 +24,7 @@ Numbers only from RESULTS.md. Facts only from FACTS.md. Replay mode on stage (sa
 | What if the attacker rewords or translates? | The verdict never reads the wording: the address still exists only in the email (s7a Hindi is denied). Disguised addresses ("at"/"dot", base64, Kannada digits, invisible characters) are traced back and denied too (s7b–s7e); disguises we don't decode go to approval, never allowed. | M2 |
 | Isn't the agent scripted? | In replay mode the agent's plan is recorded so the demo is reproducible; every gate decision is computed live. Live LLM mode uses <provider/model>. | M1 |
 | Does it work with real agents? | Yes: the MCP gateway puts PASSPORT in front of any MCP client (Claude Desktop, Cursor, the MCP Inspector) with no change to the client or the model. Claude itself usually refuses our hidden instruction, so the attack is shown with a scripted agent that obeys it; PASSPORT refuses the send quoting line 13 of email #3, and the tool is never called (RESULTS.md "Gateway"). It protects only the tools behind the gateway, and the intent is what the client reports. | M1 |
-| False positives? | 0 popups on clean legit tasks, 7/7 legit tasks completed with the shield on (RESULTS.md). | M2 |
+| False positives? | 0 popups on clean legit tasks, 14/14 legit tasks completed with the shield on (RESULTS.md). | M2 |
 | What if the user types the attacker's address? | Then it's the user's intent; out of scope, and in our threat model. | M4 |
 | Does this protect Gmail's own Gemini? | No. Google runs those tools; we protect agents whose tools go through PASSPORT. | M1 |
 | What if the user adds the raw email server to Claude directly? | Our fake upstream won't start without a random key only the gateway knows. A different raw server the user adds is outside PASSPORT: a stated limit. | M1 |
