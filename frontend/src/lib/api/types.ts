@@ -94,6 +94,10 @@ export interface Health {
   env: string;
   live_llm_available: boolean;
   access_code_required: boolean;
+  /** the MCP gateway API is on (PASSPORT_GATEWAY_TOKEN set) */
+  gateway_enabled: boolean;
+  /** how long a gateway approval waits before it counts as no */
+  gateway_approval_wait_s: number;
 }
 
 export interface NewSessionResponse {
@@ -171,4 +175,18 @@ export interface GatewayCallEvent {
   decision_id: string;
   run: boolean;
   message: string;
+}
+
+/** GET /v1/gateway/tools: one upstream MCP server + catalog version the gateways connected. */
+export interface ConnectedTool {
+  server: string;
+  sha256: string;
+  tools: { name: string; description: string }[];
+  agents: string[];
+  /** the catalog changed after install: those sessions refuse every call */
+  locked: boolean;
+}
+
+export interface ConnectedToolList {
+  items: ConnectedTool[];
 }

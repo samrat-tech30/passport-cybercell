@@ -26,7 +26,7 @@ Event    = {seq, session_id, type, data, ts}
 
 | Method | Path | Body | Success | Errors |
 |---|---|---|---|---|
-| GET | `/health` | – | `{status, version, env, live_llm_available, access_code_required}` | – |
+| GET | `/health` | – | `{status, version, env, live_llm_available, access_code_required, gateway_enabled, gateway_approval_wait_s}` (is `PASSPORT_GATEWAY_TOKEN` set; how long a gateway approval waits, for the dashboard countdown) | – |
 | GET | `/scenarios` | – | `[{id, title, category, user_request, is_attack, v2_note}]` | – |
 | POST | `/sessions` | `{scenario_id?, user_request?, shield_on=true, mode="replay"\|"live"}` | 201 `{session_id, status, capsule, shield_on, mode}`; the run starts in the background | 400 `scenario_required`, `request_mismatch`, `live_llm_disabled`, `invalid_session`; 401 `access_code_required`; 404 `scenario_not_found`; 422 `invalid_input`; 429 `rate_limited` |
 | GET | `/sessions/{id}` | – | `{session, decisions: Decision[], world_events[], pending_approvals: Decision[]}` | 404 `session_not_found` |
@@ -78,6 +78,7 @@ The MCP gateway (`prompts/GATEWAY-PROMPTS.md`) puts PASSPORT between an outside 
 | POST | `/v1/gateway/sessions/{id}/observe` | `{decision_id, output: str ≤ 20000}` | `{ok: true}` | 409 `observe_rejected`; 404 `session_not_found`; 401, 413, 422, 429, 503 |
 | POST | `/v1/gateway/sessions/{id}/catalog` | `{server: str ≤ 60, tools: [{name: str ≤ 64, description: str ≤ 4000, input_schema: object, title?: str ≤ 200, annotations?: object, output_schema?: object}] ≤ 50}`, names unique | `{sha256, tools: n}`. The first call pins the catalog; the same sha256 again → 200. | 409 `catalog_changed`; 404 `session_not_found`; 401, 413, 422, 429, 503 |
 | GET | `/v1/gateway/sessions` | – | `{items: [{session_id, agent_name, client, shield_on, intent, status, counts: {ALLOW, REQUIRE_APPROVAL, DENY}, created_ts}]}` newest first; `intent` is the request text or null | 503 |
+| GET | `/v1/gateway/tools` | – | `{items: [{server, sha256, tools: [{name, description}], agents: [str], locked}]}`: the upstream MCP servers the running gateways have connected, one item per server + catalog version (read from memory, newest session first; `description` cut to 300 chars; `locked` = the catalog changed after install, so those sessions refuse every call). No token, like the GET above | 503 |
 
 `{id}` must be a gateway session. A scenario session id, or an unknown id, gets 404 `session_not_found`.
 

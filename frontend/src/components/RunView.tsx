@@ -5,7 +5,6 @@ import { ApprovalDialog } from "./ApprovalDialog";
 import { DecisionCard } from "./DecisionCard";
 import { EvidenceDrawer } from "./EvidenceDrawer";
 import { GateStrip } from "./GateStrip";
-import { Illustration } from "./Illustration";
 import { Legend } from "./Legend";
 import { ScenarioPicker } from "./ScenarioPicker";
 import { WorldPanel } from "./WorldPanel";
@@ -32,20 +31,6 @@ export function RunView({ state, scenario, controls, onAnswer, onRetry, canRun, 
 
   return (
     <div className="run">
-      {idle && (
-        <header className="intro">
-          <div className="intro__copy">
-            <h1 className="display">
-              Watch an AI agent get attacked, and <mark className="hl">stopped</mark>.
-            </h1>
-            <p className="lead">
-              Every tool call the agent makes is checked before it runs. Each value has to show where it came from, and text from
-              outside can't steer an action.
-            </p>
-          </div>
-          <Illustration scene="passport" className="intro__art" />
-        </header>
-      )}
 
       {/* The one sky block: what you asked for, and the controls to run it. */}
       <section className={`hero ${idle ? "" : "hero--compact"}`} aria-label="Task">

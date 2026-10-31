@@ -131,3 +131,31 @@ def test_catalog_limits_and_extra_fields_are_refused(client):
     for body in (too_many, too_long, extra, {"server": "s", "tools": [], "trusted": True}):
         assert client.post(url, json=body, headers=H).status_code == 422
     assert client.post(url, json={"server": "s", "tools": []}).status_code == 401  # no token
+
+
+def test_connected_tools_lists_each_server_version_with_its_agents_and_lock(client):
+    """GET /v1/gateway/tools (dashboard "Connected tools"): one item per server + catalog version."""
+    assert client.get("/v1/gateway/tools").json() == {"items": []}
+    a = session(client, [SEND_EMAIL])
+    session(client, [SEND_EMAIL])  # the same server and catalog: still one item
+    items = client.get("/v1/gateway/tools").json()["items"]
+    assert len(items) == 1 and items[0]["server"] == "nimbus-mcp" and items[0]["locked"] is False
+    assert items[0]["tools"] == [{"name": "send_email", "description": "Send an email."}]
+    assert items[0]["agents"] == ["a"]
+    # A rug pull: the same session reports a different catalog, so its version shows as locked.
+    r = client.post(
+        f"/v1/gateway/sessions/{a}/catalog", json={"server": "nimbus-mcp", "tools": [POISONED]}, headers=H
+    )
+    assert r.status_code == 409
+    assert any(i["locked"] for i in client.get("/v1/gateway/tools").json()["items"])
+    long = dict(CLEAN, name="long_tool", description="x" * 3000)
+    session(client, [long])
+    descs = [t["description"] for i in client.get("/v1/gateway/tools").json()["items"] for t in i["tools"]]
+    assert max(len(d) for d in descs) == 300
+
+
+def test_connected_tools_is_off_without_a_token(monkeypatch):
+    monkeypatch.delenv("PASSPORT_GATEWAY_TOKEN", raising=False)
+    reset_settings_for_tests()
+    with TestClient(create_app()) as c:
+        assert c.get("/v1/gateway/tools").status_code == 503

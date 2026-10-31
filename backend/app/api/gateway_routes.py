@@ -74,6 +74,36 @@ def list_gateway_sessions() -> dict[str, Any]:
     return {"items": repo.list_gateway_sessions()}
 
 
+@router.get("/tools", dependencies=[Depends(gateway_enabled)])
+def connected_tools() -> dict[str, Any]:
+    """The upstream MCP servers the running gateways connected, one item per server + catalog version.
+    Read-only, from memory; for the dashboard's "Connected tools" page."""
+    names = {r["session_id"]: r["agent_name"] for r in repo.list_gateway_sessions(limit=200)}
+    items: dict[tuple[str, str], dict[str, Any]] = {}
+    for s in reversed(list(SESSIONS.values())):  # newest first
+        if s.mode != "gateway" or not s.gateway_catalog or not s.gateway_catalog_sha:
+            continue
+        key = (s.gateway_catalog["server"], s.gateway_catalog_sha)
+        item = items.setdefault(
+            key,
+            {
+                "server": key[0],
+                "sha256": key[1],
+                "tools": [
+                    {"name": t["name"], "description": str(t.get("description", ""))[:300]}
+                    for t in s.gateway_catalog["tools"]
+                ],
+                "agents": [],
+                "locked": False,
+            },
+        )
+        name = names.get(s.id, "unknown agent")
+        if name not in item["agents"]:
+            item["agents"].append(name)
+        item["locked"] = item["locked"] or s.gateway_locked
+    return {"items": list(items.values())}
+
+
 @router.post("/sessions/{session_id}/intent", dependencies=[Depends(require_gateway_token)])
 async def intent(session_id: str, body: IntentIn) -> dict[str, Any]:
     s = _session(session_id)

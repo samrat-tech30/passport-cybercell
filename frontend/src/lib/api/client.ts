@@ -1,5 +1,6 @@
 // The ONLY place the frontend talks to the backend. Components never call fetch directly.
 import type {
+  Capsule, ConnectedToolList, GatewaySessionList,
   AuditRow, AuditVerify, Decision, EvalResult, Health, NewSessionResponse, Scenario, SegmentView, StreamEvent,
 } from "./types";
 
@@ -56,7 +57,9 @@ export const api = {
   startSession: (p: { scenario_id: string; shield_on: boolean; mode: "replay" | "live"; user_request?: string }) =>
     post<NewSessionResponse>("/sessions", p),
   session: (id: string) =>
-    request<{ decisions: Decision[]; pending_approvals: Decision[]; session: { status: string } }>(`/sessions/${id}`),
+    request<{ decisions: Decision[]; pending_approvals: Decision[]; session: { status: string; capsule?: Capsule | null } }>(`/sessions/${id}`),
+  gatewaySessions: () => request<GatewaySessionList>("/v1/gateway/sessions"),
+  connectedTools: () => request<ConnectedToolList>("/v1/gateway/tools"),
   segment: (sessionId: string, segmentId: string) =>
     request<SegmentView>(`/sessions/${sessionId}/segments/${encodeURIComponent(segmentId)}`),
   approve: (decisionId: string, approve: boolean) => post<{ ok: boolean }>(`/approvals/${decisionId}`, { approve }),

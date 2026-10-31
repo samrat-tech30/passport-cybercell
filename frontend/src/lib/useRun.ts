@@ -16,17 +16,21 @@ export interface RunState {
   answer: string | null;
   error: string | null;
   lastSeq: number;
+  /** how the last approval ended (shown after the dialog closes) */
+  lastApproval: { decisionId: string; result: "approved" | "rejected" | "timeout" } | null;
 }
 
 const initial: RunState = {
   sessionId: null, status: "idle", shieldOn: true, capsule: null, decisions: [], steps: [], world: [],
-  pending: null, answer: null, error: null, lastSeq: 0,
+  pending: null, answer: null, error: null, lastSeq: 0, lastApproval: null,
 };
 
 type Action =
   | { type: "start"; shieldOn: boolean }
   | { type: "started"; sessionId: string; capsule: Capsule }
   | { type: "event"; event: StreamEvent }
+  | { type: "attach"; sessionId: string; shieldOn: boolean }
+  | { type: "seed"; sessionId: string; decisions: Decision[]; capsule: Capsule | null; pending: Decision | null }
   | { type: "fail"; message: string }
   | { type: "reset" };
 
@@ -44,13 +48,21 @@ function reducer(s: RunState, a: Action): RunState {
       return { ...initial, status: "starting", shieldOn: a.shieldOn };
     case "started":
       return { ...s, sessionId: a.sessionId, capsule: a.capsule, status: "running" };
+    case "attach":
+      return { ...initial, sessionId: a.sessionId, shieldOn: a.shieldOn, status: "running" };
+    case "seed": {
+      if (a.sessionId !== s.sessionId) return s; // a late answer for a session we already left
+      const decisions = a.decisions.reduce(upsert, s.decisions);
+      const pending = s.pending ?? a.pending;
+      return { ...s, decisions, capsule: s.capsule ?? a.capsule, pending, status: pending ? "waiting" : s.status };
+    }
     case "fail":
       return { ...s, status: "error", error: a.message };
     case "reset":
       return initial;
     case "event": {
       const e = a.event;
-      if (e.seq <= s.lastSeq) return s; // already seen (reconnect)
+      if (e.seq <= s.lastSeq || (s.sessionId && e.session_id !== s.sessionId)) return s; // seen, or another session
       const next = { ...s, lastSeq: e.seq };
       switch (e.type) {
         case "capsule":
@@ -62,9 +74,11 @@ function reducer(s: RunState, a: Action): RunState {
         case "decision":
           return { ...next, decisions: upsert(s.decisions, e.data as unknown as Decision) };
         case "approval_needed":
-          return { ...next, status: "waiting", pending: e.data as unknown as Decision };
-        case "approval_result":
-          return { ...next, status: "running", pending: null };
+          return { ...next, status: "waiting", pending: e.data as unknown as Decision, lastApproval: null };
+        case "approval_result": {
+          const result = e.data.result as "approved" | "rejected" | "timeout";
+          return { ...next, status: "running", pending: null, lastApproval: { decisionId: String(e.data.decision_id), result } };
+        }
         case "world_event":
           return { ...next, world: [...s.world, e.data as unknown as WorldEvent] };
         case "done":
@@ -108,5 +122,31 @@ export function useRun() {
     }
   }, []);
 
-  return { state, start, answer, reset: () => dispatch({ type: "reset" }) };
+  /** Follow a session that runs somewhere else (an outside agent behind the MCP gateway): its past, then live. */
+  const attach = useCallback(async (sessionId: string, shieldOn: boolean) => {
+    close.current?.();
+    dispatch({ type: "attach", sessionId, shieldOn });
+    try {
+      const s = await api.session(sessionId);
+      dispatch({
+        type: "seed", sessionId, decisions: s.decisions, capsule: s.session.capsule ?? null, pending: s.pending_approvals[0] ?? null,
+      });
+    } catch (e) {
+      dispatch({ type: "fail", message: e instanceof ApiError ? e.message : "Could not load this agent's calls." });
+      return;
+    }
+    close.current = subscribe(
+      sessionId,
+      (event) => dispatch({ type: "event", event }),
+      (message) => dispatch({ type: "fail", message }),
+    );
+  }, []);
+
+  const detach = useCallback(() => {
+    close.current?.();
+    close.current = null;
+    dispatch({ type: "reset" });
+  }, []);
+
+  return { state, start, attach, detach, answer, reset: () => dispatch({ type: "reset" }) };
 }
