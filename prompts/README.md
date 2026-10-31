@@ -13,6 +13,7 @@ Paste these into Claude Code (run `claude` from the repo root). Each one is a fu
 | `v2-B-disguise-proof.md`                                 | M2       | 21:00                          |
 | `v2-C-herd-immunity.md`                                  | M4 + M3  | after CP2 (04:00)              |
 | `GATEWAY-PROMPTS.md` (G0–G5; supersedes `v2-E-mcp-gateway.md`) | M1 / B | by 04:00 (replaces v2-D) |
+| `J-judge-fixes.md` (J1–J4, mock-judge findings)          | A        | 31 Oct, before code freeze     |
 | `v2-D-payment-visa.md`                                   | M1       | dropped (only if all done)     |
 | `stretch-langgraph-adapter.md`                           | anyone   | only after code freeze is safe |
 | `99-demo-prep.md`                                        | everyone | 09:00                          |
