@@ -12,6 +12,8 @@ eval_out=$(mktemp "${TMPDIR:-/tmp}/passport-eval.XXXXXX")  # sandboxes may not a
 (cd backend && .venv/bin/python -m app.eval_runner --no-save | tee "$eval_out" | tail -5)
 grep -E "^\| Attacks that got through \| [0-9]+ / [0-9]+ \| 0 / [0-9]+ \|" "$eval_out" >/dev/null \
   || { echo "FAIL: an attack got through with the shield ON"; exit 1; }
+echo "== frozen MCP server + pipeline (prompts/J2-judge-review.md)"
+bash scripts/frozen.sh
 echo "== frontend: typecheck + build"
 (cd frontend && npm run --silent build)
 echo "== guard hook over all source files"

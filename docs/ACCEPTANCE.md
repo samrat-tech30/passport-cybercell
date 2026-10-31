@@ -83,3 +83,13 @@ Slices marked ✅ were delivered by the starter and verified on 2026-10-30 (85 b
 - [ ] [hand] Backup video recorded (2 min) and on the laptop desktop
 - [x] [auto] `make check` green on `main`; RESULTS.md matches `make eval` (CI on main 2026-10-31 ~03:50; recheck after G3 merges)
 - [ ] [hand] Submitted by 14:30 (repo, video, slides)
+
+## J2 Judge-review fixes (prompts/J2-judge-review.md; pipeline frozen)
+- [ ] [auto] `scripts/frozen.sh` passes inside `make check` for every J2 task
+- [ ] [hand] J2-1 `make gmail-live` runs a real LLM through the gateway on real Gmail; RESULTS.md "Live LLM on real Gmail" filled from 5 runs (honest, even if the model never falls for it)
+- [ ] [auto] J2-1 test: fake LLM obeys a seeded email → R3 refusal, only the legit draft exists
+- [ ] [hand] J2-2 `make preflight` all PASS before the demo
+- [ ] [hand] J2-3 "How each attack is stopped" + "Not covered yet" in Demo → Measured results, from eval rows only
+- [ ] [hand] J2-4 PITCH.md demo order, "What PASSPORT doesn't stop" slide, 5 judge Q&A rows
+- [ ] [hand] J2-5 docs/ROADMAP.md (generic MCP tools, R12 body/link exfiltration)
+- [ ] [hand] J2-6 rehearsed 3×, backup video recorded
