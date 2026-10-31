@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { AgentsView } from "./components/AgentsView";
+import { AgentsView, agentFromHash } from "./components/AgentsView";
 import { AuditView } from "./components/AuditView";
 import { Illustration } from "./components/Illustration";
 import { RunView } from "./components/RunView";
@@ -16,6 +16,8 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "demo", label: "Demo" },
   { id: "audit", label: "Audit" },
 ];
+
+const agentWindow = agentFromHash() !== null; // opened with "Open in new window": one agent's run, no tabs
 
 export default function App() {
   const [health, setHealth] = useState<Health | null>(null);
@@ -120,13 +122,13 @@ export default function App() {
           <span className="brand__tag">Every argument needs a passport</span>
         </div>
 
-        <nav className="tabs" aria-label="Views">
+        {!agentWindow && <nav className="tabs" aria-label="Views">
           {TABS.map((t) => (
             <button key={t.id} type="button" className={`tab ${tab === t.id ? "tab--on" : ""}`} aria-current={tab === t.id ? "page" : undefined} onClick={() => setTab(t.id)}>
               {t.label}
             </button>
           ))}
-        </nav>
+        </nav>}
 
         {health?.access_code_required && (
           <label className="field field--code">

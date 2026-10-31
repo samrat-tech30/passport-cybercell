@@ -15,7 +15,7 @@ const STEPS = [
 ] as const;
 
 /** An agent session opened in its own window: index.html#agent=ses_… */
-function agentFromHash(): string | null {
+export function agentFromHash(): string | null {
   const m = /(?:^#|&)agent=(ses_[0-9a-f]{10})\b/.exec(window.location.hash);
   return m ? m[1] : null;
 }
@@ -31,6 +31,7 @@ export function AgentsView({ health }: { health: Health | null }) {
   const [evidence, setEvidence] = useState<Evidence | null>(null);
   const { state, attach, detach, answer } = useRun();
   const asked = useRef<string | null>(null);
+  const [focus] = useState(agentFromHash); // this window shows one agent's run only
 
   const poll = useCallback(async () => {
     try {
@@ -38,7 +39,7 @@ export function AgentsView({ health }: { health: Health | null }) {
       setItems(next);
       setListError(null);
       setDisabled(false);
-      const waiting = next.find((s) => s.status === "waiting_approval" && s.session_id !== selected);
+      const waiting = focus ? undefined : next.find((s) => s.status === "waiting_approval" && s.session_id !== selected);
       if (!waiting) {
         asked.current = null;
         setElsewhere(null);
@@ -50,7 +51,7 @@ export function AgentsView({ health }: { health: Health | null }) {
       if (e instanceof ApiError && e.status === 503) setDisabled(true);
       else setListError(e instanceof ApiError ? e.message : "Can't load the connected agents.");
     }
-  }, [selected]);
+  }, [selected, focus]);
 
   useEffect(() => {
     void poll();
@@ -74,11 +75,89 @@ export function AgentsView({ health }: { health: Health | null }) {
   const waitS = health?.gateway_approval_wait_s ?? 40;
   const decisions = [...state.decisions].reverse(); // newest first: a live monitor
 
+  useEffect(() => {
+    if (focus && current) document.title = `${current.agent_name} · PASSPORT`;
+  }, [focus, current]);
+
+  /** A real separate window (not a tab) showing only this agent's run. */
+  const openWindow = (sid: string) => {
+    const url = `${window.location.origin}${window.location.pathname}#agent=${sid}`;
+    const w = window.open(url, `passport-${sid}`, "popup=yes,width=1180,height=900");
+    w?.focus();
+  };
+
   const onAnswer = async (ok: boolean) => {
     if (!pending) return;
     if (pending === elsewhere) setElsewhere(null);
     await answer(pending.id, ok);
   };
+
+  const live = (
+    <>
+      {state.lastApproval?.result === "timeout" && (
+        <p className="error" role="status">No answer in time, so the call was refused. The agent can ask again.</p>
+      )}
+      {current && decisions.length === 0 && <p className="muted">No tool calls yet.</p>}
+      <div className="timeline">
+        {decisions.map((d) => (
+          <DecisionCard key={d.id} d={d} onEvidence={setEvidence} />
+        ))}
+      </div>
+    </>
+  );
+
+  const dialogs = (
+    <>
+      {pending && (
+        <ApprovalDialog
+          key={pending.id}
+          d={pending}
+          deadline={pending.ts * 1000 + waitS * 1000}
+          context={`${asking?.agent_name ?? "An agent"} is waiting for your answer`}
+          onAnswer={(ok) => void onAnswer(ok)}
+        />
+      )}
+      {evidence && state.sessionId && (
+        <EvidenceDrawer sessionId={state.sessionId} evidence={evidence} onClose={() => setEvidence(null)} />
+      )}
+    </>
+  );
+
+  if (focus) {
+    return (
+      <div className="page page--run">
+        <p className="eyebrow">
+          Agent run
+          <a className="link agents__open" href={window.location.pathname}>Open the full dashboard</a>
+        </p>
+        {current ? (
+          <section className="agents__live" aria-live="polite" aria-label="Live decisions">
+            <div className="hero agents__hero">
+              <div className="hero__copy">
+                <p className="eyebrow">
+                  {current.agent_name}
+                  {current.client && <span className="muted">via {current.client}</span>}
+                  <span className="tag">{current.status === "waiting_approval" ? "Needs you" : current.shield_on ? "Protected" : "Watch only"}</span>
+                </p>
+                <p className="hero__request">{current.intent ?? "Waiting for the agent to say what the user asked."}</p>
+                {state.capsule && current.intent && <p className="hero__hint">{state.capsule.summary}</p>}
+                <p className="hero__hint">
+                  {current.counts.ALLOW} allowed · {current.counts.REQUIRE_APPROVAL} asked · {current.counts.DENY} blocked
+                </p>
+              </div>
+            </div>
+            {live}
+          </section>
+        ) : (
+          <div className="empty">
+            <p className="h2">{listError ?? "Loading this agent's run…"}</p>
+            <p className="muted">If it doesn't appear, the backend was restarted and this run is gone.</p>
+          </div>
+        )}
+        {dialogs}
+      </div>
+    );
+  }
 
   return (
     <div className="page">
@@ -160,7 +239,16 @@ export function AgentsView({ health }: { health: Health | null }) {
                   <p className="eyebrow">
                     {current.agent_name}
                     {current.client && <span className="muted">via {current.client}</span>}
-                    <a className="link agents__open" href={`#agent=${current.session_id}`} target="_blank" rel="noopener noreferrer">
+                    <a
+                      className="link agents__open"
+                      href={`#agent=${current.session_id}`}
+                      target="_blank"
+                      rel="noopener"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        openWindow(current.session_id);
+                      }}
+                    >
                       Open in new window
                     </a>
                   </p>
@@ -172,31 +260,12 @@ export function AgentsView({ health }: { health: Health | null }) {
                 </div>
               </div>
             )}
-            {state.lastApproval?.result === "timeout" && (
-              <p className="error" role="status">No answer in time, so the call was refused. The agent can ask again.</p>
-            )}
-            {current && decisions.length === 0 && <p className="muted">No tool calls yet.</p>}
-            <div className="timeline">
-              {decisions.map((d) => (
-                <DecisionCard key={d.id} d={d} onEvidence={setEvidence} />
-              ))}
-            </div>
+            {live}
           </section>
         </div>
       )}
 
-      {pending && (
-        <ApprovalDialog
-          key={pending.id}
-          d={pending}
-          deadline={pending.ts * 1000 + waitS * 1000}
-          context={`${asking?.agent_name ?? "An agent"} is waiting for your answer`}
-          onAnswer={(ok) => void onAnswer(ok)}
-        />
-      )}
-      {evidence && state.sessionId && (
-        <EvidenceDrawer sessionId={state.sessionId} evidence={evidence} onClose={() => setEvidence(null)} />
-      )}
+      {dialogs}
     </div>
   );
 }

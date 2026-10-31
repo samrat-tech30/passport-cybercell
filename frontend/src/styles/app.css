@@ -2142,3 +2142,9 @@ main {
   margin-left: auto;
   font-weight: 500;
 }
+
+/* An agent's run in its own window: one column, nothing else. */
+.page--run {
+  max-width: 980px;
+  padding-top: var(--space-6);
+}
