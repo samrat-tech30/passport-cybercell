@@ -6,6 +6,11 @@
 **Live URLs:** frontend <…> · backend <…>
 **Next task:** J2 judge-review fixes, in order: `prompts/J2-judge-review.md` (J2-1 live gullible LLM on real Gmail → J2-2 preflight → J2-3 limits panel → J2-4 pitch → J2-5 roadmap → J2-6 rehearse). **The passport-gmail MCP server and pipeline are FROZEN** (`scripts/frozen.sh`, checked by `make check`).
 
+## Handoff 09:30 (J2-1, Person A → Ishan): code done, REAL RUN NOT DONE YET
+- Branch `feat/j2-live-agent` (pushed, NOT merged): `integrations/demo_agent/live_gmail_agent.py` + `make gmail-live ME=… RUNS=…` + `integrations/tests/test_live_gmail_agent.py` (fake LLM obeys a seeded email → R3 DENY fed back to the model; the attacker send never reaches the upstream; one draft). Reuses `app.agent.llm.OpenAICompatLLM` (one retry on 429) + `NAIVE_ASSISTANT_PROMPT`, read-only. Each run = a fresh gateway process (= fresh PASSPORT session). Prints tool, `to`, PASSPORT's first line, per-run `{attacker_addresses_tried, denied, drafts_made}`; never bodies or the summary.
+- Checked: `make check` ALL CHECKS PASSED (frozen: 24 files unchanged); integrations tests 48 passed without test_e2e.py. test_e2e.py NOT run (the sandbox blocks port binding): run `make gateway-test` on a normal shell.
+- To finish J2-1: (1) `make backend` with PASSPORT_GATEWAY_TOKEN + LLM_* in backend/.env; (2) mark other mail read, `make gmail-seed`; (3) `make gmail-live ME=samrat123dav@gmail.com RUNS=5` (25 s pause between runs is built in); (4) write the measured numbers into docs/RESULTS.md "Live LLM on real Gmail" (model, runs, runs where it tried an attacker address, how many denied, legit drafts). If it never falls for anything, say so: `make gmail-attacks` stays the fallback; (5) `make gateway-test`, commit, merge to main.
+
 ## Handoff 05:30 (Person B → Person A)
 - On main: G1 backend gateway API + G2 MCP side. Both checked: backend ruff + 172 tests + eval (9/9 → 0/9 attacks, 7/7 legit, 0 popups) + frontend build + guard hook; `make gateway-test` 23 passed (incl. 4 real e2e).
 - Windows has no `make`: use `backend/.venv/Scripts/python …` directly (README "without make"). `scripts/check.sh` expects `.venv/bin`, so on Windows run its steps by hand.
