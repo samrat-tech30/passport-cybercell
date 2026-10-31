@@ -4,7 +4,7 @@
 
 **Last updated:** 2026-10-31 07:55 (main: gateway G1–G6, dashboard per the architecture, real Gmail connector, attack scenarios s9–s13b)
 **Live URLs:** frontend <…> · backend <…>
-**Next task:** Person A → G3 Gateway tab (feat/gateway-ui from main). Person B → E-1 (rehearse, backup video, slides), 08:00 go/no-go. Handoff: see "Handoff 05:30" below.
+**Next task:** J2 judge-review fixes, in order: `prompts/J2-judge-review.md` (J2-1 live gullible LLM on real Gmail → J2-2 preflight → J2-3 limits panel → J2-4 pitch → J2-5 roadmap → J2-6 rehearse). **The passport-gmail MCP server and pipeline are FROZEN** (`scripts/frozen.sh`, checked by `make check`).
 
 ## Handoff 05:30 (Person B → Person A)
 - On main: G1 backend gateway API + G2 MCP side. Both checked: backend ruff + 172 tests + eval (9/9 → 0/9 attacks, 7/7 legit, 0 popups) + frontend build + guard hook; `make gateway-test` 23 passed (incl. 4 real e2e).
