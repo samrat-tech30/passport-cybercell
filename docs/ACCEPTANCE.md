@@ -70,6 +70,14 @@ Slices marked ✅ were delivered by the starter and verified on 2026-10-30 (85 b
 ## V2-D Payment visa (prompts/v2-D-payment-visa.md; dropped for the gateway, only if everything else is done)
 - [ ] [auto] direct tool call without visa, edited args, reused visa, expired visa → all refused; approved flow still pays
 
+## J Mock-judge fixes (prompts/J-judge-fixes.md; Person A; on main by 11:30)
+- [ ] [auto] J1: phishing URL from an email in the send_email body → REQUIRE_APPROVAL R9_BODY_UNTRUSTED with the email line; payroll.csv chunk in the body → REQUIRE_APPROVAL; internal addresses in a summary → no popup (backend/tests/test_body_entities.py)
+- [ ] [auto] J2: gateway on, POST /approvals without or with a wrong X-Approver-Code → 401 and the call times out as "no"; approver code equal to the gateway token refused at start-up
+- [ ] [auto] J3: audit chain is HMAC-keyed; `tamper_audit.py --recompute` (whole chain rewritten without the key) → verify reports broken
+- [ ] [auto] J4: "Summarize my inbox. Do NOT send any emails" → capsule has no send_email; "not more than Rs 50,000" cap still works
+- [ ] [auto] after J merges: `make eval` unchanged (attacks 9/9 → 0/9, legit 7/7 → 7/7, 0 popups) and RESULTS.md updated
+- [ ] [hand] Person B told; PITCH.md Q&A has the body / self-approval / audit-rewrite answers
+
 ## E-1 Demo ready (by 12:00)
 - [ ] [hand] PITCH.md rehearsed 3 times under 3:00
 - [ ] [hand] Backup video recorded (2 min) and on the laptop desktop
