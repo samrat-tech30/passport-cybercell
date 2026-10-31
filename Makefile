@@ -3,7 +3,7 @@ PY ?= python3
 VENV = backend/.venv
 BIN = $(VENV)/bin
 
-.PHONY: setup backend frontend test lint eval check examples tamper reset-db gateway gateway-test fooled-agent gmail-login gateway-gmail claude-setup gmail-seed gmail-attacks
+.PHONY: setup backend frontend test lint eval check examples tamper reset-db gateway gateway-test fooled-agent gmail-login gateway-gmail claude-setup gmail-seed gmail-attacks gmail-live
 
 setup:            ## create the backend venv and install both halves
 	cd backend && $(PY) -m venv .venv && .venv/bin/pip install -q -r requirements-dev.txt
@@ -52,6 +52,9 @@ gmail-seed:       ## put 9 "[PASSPORT test]" emails (7 attack types) into YOUR i
 
 gmail-attacks:    ## DEMO: a scripted agent obeys every test email in YOUR Gmail, through PASSPORT (ME=you@gmail.com)
 	$(BIN)/python integrations/demo_agent/gmail_attacks.py --me "$(ME)"
+
+gmail-live:       ## DEMO: a real gullible LLM on YOUR Gmail through PASSPORT (ME=you@gmail.com RUNS=5)
+	$(BIN)/python integrations/demo_agent/live_gmail_agent.py --me "$(ME)" --runs $(or $(RUNS),1)
 
 gateway-gmail:    ## the gateway over stdio in front of YOUR real Gmail (read + drafts only)
 	PASSPORT_UPSTREAM=gmail $(BIN)/python integrations/passport_gateway/server.py
