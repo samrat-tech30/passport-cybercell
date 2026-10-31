@@ -9,7 +9,7 @@ Numbers only from RESULTS.md. Facts only from FACTS.md. Replay mode on stage (sa
 | 0:35–1:00 | M3 | Agent tab, S2, **shield off**, Run | "The user asks for an inbox summary to Priya. Email #3 hides one white line. Watch the right panel." → attacker panel shows the leaked API key (redacted canary). |
 | 1:00–1:45 | M3 | Same S2, **shield on**, Run → Show evidence | "Same email, same agent. Every argument must show a passport. Priya came from your words: allowed. audit-team@evil.test exists only in Email #3, line 13: denied. Here's the hidden line. Rewording or translating it changes nothing: the address still wasn't born in your words." |
 | 1:45–2:05 | M3 | S5 approval popup → Reject/Approve | "Payments always ask, and show only the risky value and where it came from. No answer in two minutes means no." |
-| 2:05–2:25 | M2 | Scoreboard tab → Run evaluation | "Every scenario, shield off and on: attacks that got through 16 of 16 → 0 of 16, legitimate tasks 14 of 14 kept, zero popups on clean tasks. Measured, and our test suite is in the repo." (+ v2 result if built) |
+| 2:05–2:25 | M2 | Demo tab → Measured results → Run evaluation | "Every scenario, shield off and on: attacks that got through 16 of 16 → 0 of 16, legitimate tasks 14 of 14 kept, zero popups on clean tasks. Measured, and our test suite is in the repo." (+ v2 result if built) |
 | 2:25–2:45 | M1 | Audit tab, `make tamper` in a terminal, Verify | "Every decision is in a hash chain. Change one row and verification breaks at that row." |
 | 2:45–3:00 | M4 | Closing slide | "Don't secure the prompt. Check the passport of every argument. Any framework can call `/v1/decide` before running a tool." |
 
