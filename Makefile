@@ -3,7 +3,7 @@ PY ?= python3
 VENV = backend/.venv
 BIN = $(VENV)/bin
 
-.PHONY: setup backend frontend test lint eval check examples tamper reset-db gateway gateway-test fooled-agent gmail-login gateway-gmail
+.PHONY: setup backend frontend test lint eval check examples tamper reset-db gateway gateway-test fooled-agent gmail-login gateway-gmail claude-setup
 
 setup:            ## create the backend venv and install both halves
 	cd backend && $(PY) -m venv .venv && .venv/bin/pip install -q -r requirements-dev.txt
@@ -49,6 +49,9 @@ gmail-login:      ## once: sign in to YOUR Gmail for the real connector (GMAIL_C
 
 gateway-gmail:    ## the gateway over stdio in front of YOUR real Gmail (read + drafts only)
 	PASSPORT_UPSTREAM=gmail $(BIN)/python integrations/passport_gateway/server.py
+
+claude-setup:     ## add the PASSPORT gateway to Claude Desktop (UPSTREAM=nimbus for the synthetic inbox)
+	$(BIN)/python integrations/claude_desktop_setup.py --upstream $(or $(UPSTREAM),gmail)
 
 gateway-test:     ## gateway + Nimbus + backend in one process (in-memory MCP, ASGI backend)
 	cd integrations && ../$(BIN)/python -m pytest tests -q
