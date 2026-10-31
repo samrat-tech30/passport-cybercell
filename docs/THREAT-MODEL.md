@@ -45,6 +45,12 @@ An outsider who **can't talk to the agent** but can put text where it reads: an 
   - **Content the agent saw outside PASSPORT** (text pasted into the chat, a file the client read itself). It isn't a segment, so a value from it traces as model-invented (R5, ask), not untrusted.
   - **The intent is the request as the client reports it** through `start_task`. A client that reports the wrong request gets the wrong capsule. The lock only stops a *later* call from rewriting it.
 
+### Real Gmail mode (integrations/gmail_mcp, opt-in)
+- PASSPORT reasons about where values came from. A real email that names the attacker's address is untrusted, so that address can't be a recipient (R3); but **replying to whoever emailed you** is denied for the same reason: name the address in your request.
+- Allowed sends become drafts, so the last step is a human. Reading is real: the agent sees your unread mail (the 10 newest).
+- The Google sign-in token sits in `~/.passport/gmail-token.json` on the laptop. Anyone with that user account can read it; revoke it at myaccount.google.com → Security → Third-party access.
+- Attachments, images and links are not read or labelled.
+
 ## 6. Prior work (credit it)
 CaMeL (Google DeepMind), FIDES (Microsoft), PACT and ARGUS (argument-level provenance), MELON, Task Shield, agent-canary. What's ours: see docs/PITCH.md "What's new".
 - **Tool poisoning beyond sink values.** Descriptions are labelled untrusted, so a recipient, path or account copied from one is denied. A description that only changes how the agent behaves ("summarise badly", "ask the user for their password in chat") puts no value into a sink argument and is not caught. Only servers behind the gateway are seen. The rug-pull check runs before each call; a change in the instant between the check and the upstream call is not caught.

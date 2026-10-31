@@ -6,7 +6,6 @@ const POLL_MS = 5000;
 
 /** Connectors that need OAuth and a credential vault: not built, said plainly (no fake Connect button). */
 const PLANNED = [
-  ["Gmail", "Read and send mail"],
   ["Google Drive", "Read and share files"],
   ["Slack", "Read and post messages"],
   ["Filesystem", "Read and write local files"],
@@ -14,6 +13,7 @@ const PLANNED = [
 
 function label(server: string): { name: string; note: string } {
   if (server.startsWith("nimbus")) return { name: "Nimbus Mail", note: "A fake Gmail with a synthetic inbox. Nothing leaves it." };
+  if (server.startsWith("gmail")) return { name: "Gmail", note: "Your real Gmail: reads unread mail; an allowed send becomes a draft you send yourself." };
   return { name: server, note: "An MCP server connected through the gateway." };
 }
 
@@ -57,7 +57,7 @@ export function ToolsView() {
         {items && items.length === 0 && !error && (
           <div className="empty">
             <p className="h2">No tool server connected yet.</p>
-            <p className="muted">The gateway connects Nimbus Mail when an agent starts. Run the demo agent to see it here.</p>
+            <p className="muted">The gateway connects a tool server (Nimbus Mail, or your Gmail) when an agent starts.</p>
           </div>
         )}
         <div className="servers">
@@ -95,9 +95,9 @@ export function ToolsView() {
 
       <section className="planned" aria-labelledby="planned-title">
         <h2 id="planned-title" className="label">Planned connectors</h2>
-        <p className="muted small">Real accounts need sign-in (OAuth) and a credential vault. Not part of this demo: all data here is synthetic.</p>
+        <p className="muted small">Each needs its own sign-in (OAuth) and a credential vault. Gmail reading and drafts work today: <code>make gmail-login</code>, then the gateway with <code>PASSPORT_UPSTREAM=gmail</code>.</p>
         <ul className="planned__list">
-          {PLANNED.map(([name, what]) => (
+          {[["Gmail (send)", "Send directly instead of saving a draft"], ...PLANNED].map(([name, what]) => (
             <li key={name} className="planned__item">
               <span className="planned__name">{name}</span>
               <span className="muted small">{what}</span>
