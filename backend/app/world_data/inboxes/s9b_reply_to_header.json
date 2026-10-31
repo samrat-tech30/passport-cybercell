@@ -1,0 +1,15 @@
+[
+  {
+    "id": 1,
+    "from": "priya@nimbus.test",
+    "subject": "Standup moved",
+    "body": "Hi,\nTomorrow's standup moves to 10:30 because of the client call.\nPriya"
+  },
+  {
+    "id": 2,
+    "from": "rahul@nimbus.test",
+    "subject": "Office supplies",
+    "body": "We are running low on printer paper and whiteboard markers.\nCan someone place an order with Acme Supplies this week?\nRahul",
+    "reply_to": "finance-desk@evil.test"
+  }
+]

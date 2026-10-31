@@ -2,7 +2,7 @@
 
 > Claude: the session-start hook loads this file. Update it at the end of every task (`/checkpoint`, `/handoff`). Keep it under 150 lines; details go to AI-LOG.md.
 
-**Last updated:** 2026-10-31 03:47 (Person B: G1, G2, G4 except the Claude Desktop trial, red-team + review fixes, pitch; all on main)
+**Last updated:** 2026-10-31 07:55 (main: gateway G1–G6, dashboard per the architecture, real Gmail connector, attack scenarios s9–s13b)
 **Live URLs:** frontend <…> · backend <…>
 **Next task:** Person A → G3 Gateway tab (feat/gateway-ui from main). Person B → E-1 (rehearse, backup video, slides), 08:00 go/no-go. Handoff: see "Handoff 05:30" below.
 
@@ -82,6 +82,16 @@
 - R11_LOOKALIKE (non-ASCII in a sink value, "looks like <value>"); canaries checked in disguise too; `Evidence.disguised` in the contract
 - Eval: attacks 9/9 → 0/9, legit 7/7 → 7/7, 0 popups on clean legit tasks; 109 backend tests
 - Red-team + reviewer findings fixed: user-words laundering (F1), cubic regex on long whitespace (F2), amounts matching random canaries (flaky test), soft hyphen; `scripts/check.sh` no longer writes /tmp directly
+
+## Done (Part 1 attacks, Person A, branch feat/attacks on top of feat/v2b-disguise, committed, not merged)
+- 7 new attack scenarios: s9 reply-to in body (DENY R3), s9b Reply-To header (ASK R5), s10 address split across two emails (ASK R5), s11 look-alike vendor new account (DENY R3), s12 urgent CEO in Kannada (DENY R1+R3), s13 subject line (DENY R3), s13b attachment name (ASK R5)
+- Eval (`python -m app.eval_runner --no-save`): attacks 16/16 → 0/16, legit 14/14 → 14/14, 0 popups on clean legit tasks. 3 of the 16 are stopped only by an approval the scenario rejects (s9b, s10, s13b). PITCH/RESULTS numbers not updated yet.
+
+## Tasks for M2 (gaps found by Part 1 attacks, THREAT-MODEL §5)
+- [ ] Label every email field (Reply-To, Cc, attachment names) in `segments._add_email`, so s9b and s13b become DENY R3. Flip their `expect_on` + a tracer test.
+- [ ] Split values across segments (s10): trace a value that is the join of pieces from two untrusted segments, or say why not in DECISIONS.md.
+- [ ] Reply false positive: a trusted contacts directory (like vendors.json) so "Reply to Rahul's email" works without typing the address. Needs a scenario + test.
+- [ ] Optional: flag ASCII look-alike sender domains (vs vendor registry / company domain) in the approval popup message only, never in the verdict.
 
 ## Not verified yet
 - Live mode in the UI against Groq (UI end to end checked against local Ollama only; the Groq runs were in-process via live_trials.py)
