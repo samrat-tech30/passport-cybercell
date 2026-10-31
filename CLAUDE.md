@@ -37,7 +37,7 @@ You are helping a team of 4 (BMSCE) build **PASSPORT** for **Parallax 2026** (IE
 3. **No LLM in the decision path.** The gate decides with deterministic code over data origins. An LLM may help elsewhere, never in `decide()`.
 4. **Untrusted content can't steer a sink argument** (recipient, path, account, amount, secret key). Don't weaken R3 to make a demo pass; change the scenario or the policy with a test and a line in DECISIONS.md.
 5. **Secrets never leave, never get logged.** Anything shown, stored, streamed or logged goes through `world.redact()`. Canary values are random per session; never hard-code one.
-6. **All data is synthetic.** `.test` domains, fake names, fake accounts. Tools never touch the real network or real files (delete/pay/send are in-memory).
+6. **All data is synthetic.** `.test` domains, fake names, fake accounts. Tools never touch the real network or real files (delete/pay/send are in-memory). **One exception, approved by Samrat (2026-10-31):** the opt-in real Gmail connector `integrations/gmail_mcp` (`PASSPORT_UPSTREAM=gmail`): reads unread mail, and an allowed `send_email` only creates a **draft**. Tests always use a fake Google API; never show a real inbox on the projector without checking what is in it.
 7. **Contracts first.** An endpoint or shape changes in `contracts/` first, then `backend/app/contracts.py`, then `frontend/src/lib/api/types.ts`, then tests.
 8. **No fake success.** Numbers on screen or in the pitch come from `python -m app.eval_runner` (measured), never typed. No always-passing tests, no TODO stubs on main.
 9. **Every policy or rule change has a test** in `backend/tests/` that would fail without it.

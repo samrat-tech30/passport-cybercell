@@ -12,7 +12,8 @@ Run:  python integrations/passport_gateway/server.py            (stdio, for Clau
       python integrations/passport_gateway/server.py --http --port 8765   (MCP Inspector)
 Env:  PASSPORT_URL (default http://127.0.0.1:8000), PASSPORT_GATEWAY_TOKEN (required),
       PASSPORT_SHIELD (on|off, default on), PASSPORT_AGENT_NAME (default "Claude Desktop"),
-      NIMBUS_INBOX (default base), NIMBUS_POISON (demo: tool | rugpull, makes the upstream malicious)
+      NIMBUS_INBOX (default base), NIMBUS_POISON (demo: tool | rugpull, makes the upstream malicious),
+      PASSPORT_UPSTREAM (nimbus | gmail, default nimbus; gmail = your real Gmail, drafts only, see gmail_mcp)
 Logs go to stderr only (one line per call: tool, verdict, rule, run); never tokens or outputs.
 """
 
@@ -35,6 +36,7 @@ from mcp.server import Server
 log = logging.getLogger("passport.gateway")
 
 NIMBUS_SERVER = Path(__file__).resolve().parents[1] / "nimbus_mcp" / "server.py"
+GMAIL_SERVER = Path(__file__).resolve().parents[1] / "gmail_mcp" / "server.py"
 FAIL_CLOSED = "PASSPORT unreachable or refused, failing closed"
 RUG_PULL = (
     "PASSPORT refused: the installed server changed its tool definitions after install "
@@ -87,6 +89,7 @@ class Gateway:
         self.server_name = server_name
         self.pinned_catalog = catalog_of(list(self.upstream_tools.values()))
         self.locked = False  # the upstream changed its tool definitions: refuse everything
+        self.task_started = False  # a later start_task opens a NEW session that the user must confirm
         self.passport_url = passport_url.rstrip("/")
         self.token = token
         self.shield_on = shield_on
@@ -190,10 +193,24 @@ class Gateway:
         request = args.get("request")
         if set(args) != {"request"} or not isinstance(request, str) or not request.strip():
             raise Refused("PASSPORT refused: start_task needs one text argument, request")
+        confirm = self.task_started
+        if confirm:
+            # A new task (e.g. a new chat in Claude Desktop) gets its own PASSPORT session, so it shows as
+            # its own agent on the dashboard. It may also come from a hidden instruction the agent just
+            # read, so the user must approve it there; until then every tool call is refused.
+            self.session_id = None
         sid = await self._session(ctx)
         status, body = await self._post(
-            f"/v1/gateway/sessions/{sid}/intent", {"request": request}, HTTP_TIMEOUT_S
+            f"/v1/gateway/sessions/{sid}/intent",
+            {"request": request, "confirm": confirm},
+            self.decide_timeout_s if confirm else HTTP_TIMEOUT_S,
         )
+        if status == 409 and _code(body) == "intent_rejected":
+            log.info("tool=start_task verdict=NOT_CONFIRMED run=False")
+            raise Refused(
+                "PASSPORT refused: the user did not approve this new task on the PASSPORT dashboard, "
+                "so it was not started. Ask the user to approve it, then call start_task again."
+            )
         if status == 409 and _code(body) == "intent_locked":
             log.info("tool=start_task verdict=LOCKED run=False")
             raise Refused("PASSPORT refused: intent is locked for this session")
@@ -201,6 +218,7 @@ class Gateway:
             log.info("tool=start_task verdict=UNREADABLE run=False")
             raise Refused(FAIL_CLOSED)
         log.info("tool=start_task verdict=INTENT_SET")
+        self.task_started = True
         summary = body["capsule"].get("summary", "")
         return _text(f"Intent locked. PASSPORT will check every tool call against it. {summary}".strip())
 
@@ -342,6 +360,27 @@ def nimbus_params(inbox: str, poison: str = "") -> StdioServerParameters:
     return StdioServerParameters(command=sys.executable, args=[str(NIMBUS_SERVER)], env=env)
 
 
+def gmail_params() -> StdioServerParameters:
+    """The real Gmail connector as a child process. Its key exists only in its own environment; the
+    Google sign-in is read by the child from ~/.passport (or GMAIL_TOKEN_FILE), never by the agent."""
+    env = {"GMAIL_GATEWAY_KEY": secrets.token_hex(32)}
+    if os.environ.get("GMAIL_TOKEN_FILE"):
+        env["GMAIL_TOKEN_FILE"] = os.environ["GMAIL_TOKEN_FILE"]
+    return StdioServerParameters(command=sys.executable, args=[str(GMAIL_SERVER)], env=env)
+
+
+def upstream_params() -> tuple[StdioServerParameters, str]:
+    which = os.environ.get("PASSPORT_UPSTREAM", "nimbus").strip().lower()
+    if which == "gmail":
+        return gmail_params(), "gmail-mcp"
+    if which != "nimbus":
+        log.error("PASSPORT_UPSTREAM must be nimbus or gmail")
+        sys.exit(2)
+    return nimbus_params(
+        os.environ.get("NIMBUS_INBOX", "base"), os.environ.get("NIMBUS_POISON", "")
+    ), "nimbus-mcp"
+
+
 async def serve(http_port: int | None) -> None:
     token = os.environ.get("PASSPORT_GATEWAY_TOKEN", "")
     if not token:
@@ -351,8 +390,8 @@ async def serve(http_port: int | None) -> None:
     if shield not in ("on", "off"):
         log.error("PASSPORT_SHIELD must be on or off")
         sys.exit(2)
-    inbox = os.environ.get("NIMBUS_INBOX", "base")
-    async with Client(nimbus_params(inbox, os.environ.get("NIMBUS_POISON", ""))) as upstream:
+    params, server_name = upstream_params()
+    async with Client(params) as upstream:
         tools = (await upstream.list_tools()).tools
         gateway = Gateway(
             upstream,
@@ -362,6 +401,7 @@ async def serve(http_port: int | None) -> None:
             shield_on=shield == "on",
             agent_name=os.environ.get("PASSPORT_AGENT_NAME", "Claude Desktop"),
             approval_wait_s=int(os.environ.get("GATEWAY_APPROVAL_WAIT_S", "40")),
+            server_name=server_name,
         )
         server = build_server(gateway)
         log.info(

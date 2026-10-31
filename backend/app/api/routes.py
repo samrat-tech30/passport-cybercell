@@ -43,6 +43,8 @@ def health() -> dict[str, Any]:
         "env": s.app_env,
         "live_llm_available": s.live_llm_ready,
         "access_code_required": s.demo_access_code is not None,
+        "gateway_enabled": s.gateway_token is not None,
+        "gateway_approval_wait_s": s.gateway_approval_wait_s,
     }
 
 

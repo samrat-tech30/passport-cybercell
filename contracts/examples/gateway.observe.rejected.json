@@ -3,7 +3,7 @@
     "method": "POST",
     "path": "/v1/gateway/sessions/ses_0123456789/observe",
     "body": {
-      "decision_id": "dec_ab6a59193e",
+      "decision_id": "dec_47c7bb00e9",
       "output": "<tool output>"
     }
   },

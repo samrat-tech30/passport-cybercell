@@ -45,7 +45,7 @@ export function AuditView() {
         <div className="empty">
           <Illustration scene="ledger" className="empty__art" />
           <p className="h2">Nothing logged yet.</p>
-          <p className="muted">Run a scenario on the Agent tab. Every decision lands here.</p>
+          <p className="muted">Connect an agent or run a scenario on the Demo tab. Every decision lands here.</p>
         </div>
       ) : (
         <table className="table">
@@ -59,7 +59,7 @@ export function AuditView() {
                 <td className="nowrap">{new Date(r.ts * 1000).toLocaleTimeString()}</td>
                 <td>{r.kind}</td>
                 <td className="mono">
-                  {r.kind === "decision"
+                  {r.kind === "decision" || r.kind === "gateway_decide"
                     ? `${String(r.payload.tool)} → ${String(r.payload.verdict)} (${String(r.payload.rule_id)})`
                     : JSON.stringify(r.payload).slice(0, 80)}
                 </td>

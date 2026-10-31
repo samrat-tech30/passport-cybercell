@@ -1,16 +1,28 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Decision } from "../lib/api/types";
 import { preview, whereFrom } from "../lib/format";
 
 interface Props {
   d: Decision;
   onAnswer: (approve: boolean) => void;
+  /** epoch ms when the backend stops waiting (outside agents); shows a countdown */
+  deadline?: number;
+  /** who is asking, e.g. "Claude Desktop is waiting for your answer" */
+  context?: string;
 }
 
 /** Shows only the risky values and where they came from. Reject has focus; Esc = reject. */
-export function ApprovalDialog({ d, onAnswer }: Props) {
+export function ApprovalDialog({ d, onAnswer, deadline, context }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
   const reject = useRef<HTMLButtonElement>(null);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (deadline === undefined) return undefined;
+    const t = window.setInterval(() => setNow(Date.now()), 250);
+    return () => window.clearInterval(t);
+  }, [deadline]);
+  const left = deadline === undefined ? null : Math.max(0, Math.ceil((deadline - now) / 1000));
+  const expired = left === 0;
   useEffect(() => {
     if (ref.current && !ref.current.open) ref.current.showModal();
     reject.current?.focus(); // showModal() focuses the first button (Approve); the safe choice must have focus
@@ -27,7 +39,7 @@ export function ApprovalDialog({ d, onAnswer }: Props) {
         onAnswer(false);
       }}
     >
-      <p className="eyebrow">Step {d.step} needs you</p>
+      <p className="eyebrow">{context ?? `Step ${d.step} needs you`}</p>
       <h2 id="approval-title" className="dialog__title">
         Allow <code>{d.tool}</code> to run?
       </h2>
@@ -51,11 +63,17 @@ export function ApprovalDialog({ d, onAnswer }: Props) {
         </div>
       )}
       <div className="approval__actions">
-        <p className="muted small">No answer within 2 minutes counts as no.</p>
-        <button type="button" className="btn btn--outline" onClick={() => onAnswer(true)}>
+        {left === null ? (
+          <p className="muted small">No answer within 2 minutes counts as no.</p>
+        ) : expired ? (
+          <p className="error" role="alert">Timed out, so the call was refused.</p>
+        ) : (
+          <p className="muted small" aria-live="polite"><strong className="countdown">{left} s</strong> left. No answer counts as no.</p>
+        )}
+        <button type="button" className="btn btn--outline" disabled={expired} onClick={() => onAnswer(true)}>
           Approve
         </button>
-        <button ref={reject} type="button" className="btn btn--ink" onClick={() => onAnswer(false)}>
+        <button ref={reject} type="button" className="btn btn--ink" disabled={expired} onClick={() => onAnswer(false)}>
           Reject
         </button>
       </div>

@@ -35,6 +35,12 @@
 ## MCP
 - `@modelcontextprotocol/sdk` 1.32.2 (TypeScript, latest on npm 2026-10-31): `DEFAULT_REQUEST_TIMEOUT_MSEC = 60000` in `shared/protocol.js`; `request()` uses `options.timeout ?? 60000` and fails with "Request timed out". Progress notifications reset the timer only if the client passes `resetTimeoutOnProgress: true`. So `GATEWAY_APPROVAL_WAIT_S` must stay well under 60. Which timeout Claude Desktop / Cursor actually pass: not verified yet (read unpkg source, 2026-10-31)
 
+## Gmail (integrations/gmail_mcp, read 2026-10-31)
+- OAuth for desktop apps (developers.google.com/identity/protocols/oauth2/native-app): auth `https://accounts.google.com/o/oauth2/v2/auth`, token `https://oauth2.googleapis.com/token`; loopback redirect `http://127.0.0.1:<port>`; PKCE `code_challenge_method=S256`; "refresh tokens are always returned for installed applications"; client_secret listed as optional (we send it). Loopback still supported for Desktop app clients (loopback-migration page). Whether any port works without registering it: not stated; we use a random port (read)
+- `users.messages.list` `GET https://gmail.googleapis.com/gmail/v1/users/me/messages?q=is:unread in:inbox&maxResults=10` → `messages[].id` only; scope gmail.readonly is enough (read)
+- `users.drafts.create` `POST …/users/me/drafts` body `{"message": {"raw": <base64url RFC 2822>}}`; scopes mail.google.com, gmail.modify or **gmail.compose** (read). Note: gmail.compose also allows sending; our code never calls a send endpoint, and a test asserts it
+- Not verified yet: a real sign-in and real API calls (needs your Google Cloud client)
+
 ## External services
 - LLM provider: check with `cd backend && .venv/Scripts/python scripts/llm_probe.py [--base-url --model --key-var]`, then `scripts/live_trials.py s1 --runs 5`.
   - Ollama 0.40.13 local, `http://localhost:11434/v1`, `llama3.2:latest` (3B), key: any value: probe returns a correct single tool call (11.6 s cold). **Not good enough for the agent:** in S1 x5 and S2 x3 (shield OFF) it never called `list_unread_emails`; it sent Priya a fake summary ("See list_unread_emails() for details") in one step, so it never saw Email #3. Not a refusal: it can't chain tool calls (tested, 2026-10-30)

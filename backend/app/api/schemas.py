@@ -30,6 +30,7 @@ class GatewaySessionIn(Strict):
 
 class IntentIn(Strict):
     request: str = Field(min_length=1, max_length=2000)
+    confirm: bool = False  # a later task in a running gateway: the user approves it on the dashboard
 
 
 class GatewayDecideIn(Strict):

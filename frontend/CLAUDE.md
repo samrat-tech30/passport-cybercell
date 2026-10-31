@@ -1,6 +1,6 @@
 # Frontend rules (in addition to the root CLAUDE.md)
 
-- **Stack:** React 19.3, Vite 8.3, TypeScript 7.0 (`tsc` is the new native compiler), plain CSS with tokens. No UI library, no Tailwind, no router (three tabs in `App.tsx`). Add nothing else without asking.
+- **Stack:** React 19.3, Vite 8.3, TypeScript 7.0 (`tsc` is the new native compiler), plain CSS with tokens. No UI library, no Tailwind, no router (four tabs in `App.tsx`: Agents, Tools, Demo, Audit). Add nothing else without asking.
 - Follow `frontend-conventions` for structure and `project-ui` for anything visible. Look at `../design/mockups/*.png` before changing a screen.
 - **All backend calls go through `src/lib/api/client.ts`**, typed by `src/lib/api/types.ts` (mirror of `../contracts/README.md`). Components never call `fetch` or `EventSource` directly.
 - Styles: values only from `src/styles/tokens.css` (the guard hook blocks raw hex colours elsewhere).

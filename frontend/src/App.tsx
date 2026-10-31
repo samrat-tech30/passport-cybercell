@@ -1,18 +1,23 @@
 import { useCallback, useEffect, useState } from "react";
+import { AgentsView, agentFromHash } from "./components/AgentsView";
 import { AuditView } from "./components/AuditView";
 import { Illustration } from "./components/Illustration";
 import { RunView } from "./components/RunView";
 import { Scoreboard } from "./components/Scoreboard";
+import { ToolsView } from "./components/ToolsView";
 import { api, ApiError, getAccessCode, setAccessCode } from "./lib/api/client";
 import type { Health, Scenario } from "./lib/api/types";
 import { useRun } from "./lib/useRun";
 
-type Tab = "run" | "score" | "audit";
+type Tab = "agents" | "tools" | "demo" | "audit";
 const TABS: { id: Tab; label: string }[] = [
-  { id: "run", label: "Agent" },
-  { id: "score", label: "Scoreboard" },
+  { id: "agents", label: "Agents" },
+  { id: "tools", label: "Tools" },
+  { id: "demo", label: "Demo" },
   { id: "audit", label: "Audit" },
 ];
+
+const agentWindow = agentFromHash() !== null; // opened with "Open in new window": one agent's run, no tabs
 
 export default function App() {
   const [health, setHealth] = useState<Health | null>(null);
@@ -22,7 +27,8 @@ export default function App() {
   const [scenarioId, setScenarioId] = useState("s2");
   const [shieldOn, setShieldOn] = useState(true);
   const [mode, setMode] = useState<"replay" | "live">("replay");
-  const [tab, setTab] = useState<Tab>("run");
+  const [tab, setTab] = useState<Tab>("agents");
+  const [demoView, setDemoView] = useState<"run" | "results">("run");
   const [code, setCode] = useState(getAccessCode());
   const { state, start, answer } = useRun();
 
@@ -116,13 +122,13 @@ export default function App() {
           <span className="brand__tag">Every argument needs a passport</span>
         </div>
 
-        <nav className="tabs" aria-label="Views">
+        {!agentWindow && <nav className="tabs" aria-label="Views">
           {TABS.map((t) => (
             <button key={t.id} type="button" className={`tab ${tab === t.id ? "tab--on" : ""}`} aria-current={tab === t.id ? "page" : undefined} onClick={() => setTab(t.id)}>
               {t.label}
             </button>
           ))}
-        </nav>
+        </nav>}
 
         {health?.access_code_required && (
           <label className="field field--code">
@@ -152,7 +158,18 @@ export default function App() {
           </section>
         ) : (
           <>
-            {tab === "run" && (
+            {tab === "agents" && <AgentsView health={health} />}
+            {tab === "tools" && <ToolsView />}
+            {tab === "demo" && (
+              <div className="segmented" role="tablist" aria-label="Demo">
+                {(["run", "results"] as const).map((v) => (
+                  <button key={v} type="button" role="tab" aria-selected={demoView === v} className={`segmented__btn ${demoView === v ? "segmented__btn--on" : ""}`} onClick={() => setDemoView(v)}>
+                    {v === "run" ? "Run a scenario" : "Measured results"}
+                  </button>
+                ))}
+              </div>
+            )}
+            {tab === "demo" && demoView === "run" && (
               <RunView
                 state={state}
                 scenario={scenario}
@@ -165,7 +182,7 @@ export default function App() {
                 onPick={setScenarioId}
               />
             )}
-            {tab === "score" && <Scoreboard />}
+            {tab === "demo" && demoView === "results" && <Scoreboard />}
             {tab === "audit" && <AuditView />}
           </>
         )}

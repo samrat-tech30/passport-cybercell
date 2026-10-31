@@ -11,7 +11,9 @@
       "version": "0.1.0",
       "env": "test",
       "live_llm_available": false,
-      "access_code_required": false
+      "access_code_required": false,
+      "gateway_enabled": true,
+      "gateway_approval_wait_s": 40
     }
   }
 }

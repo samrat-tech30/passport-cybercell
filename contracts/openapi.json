@@ -567,6 +567,27 @@
         }
       }
     },
+    "/v1/gateway/tools": {
+      "get": {
+        "summary": "Connected Tools",
+        "description": "The upstream MCP servers the running gateways connected, one item per server + catalog version.\nRead-only, from memory; for the dashboard's \"Connected tools\" page.",
+        "operationId": "connected_tools_v1_gateway_tools_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Connected Tools V1 Gateway Tools Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/gateway/sessions/{session_id}/intent": {
       "post": {
         "summary": "Intent",
@@ -669,6 +690,58 @@
         }
       }
     },
+    "/v1/gateway/sessions/{session_id}/catalog": {
+      "post": {
+        "summary": "Catalog",
+        "description": "The installed server's tools. Their descriptions are untrusted content (tool poisoning); the\nfirst catalog is pinned, and a different one later (a rug pull) locks the session.",
+        "operationId": "catalog_v1_gateway_sessions__session_id__catalog_post",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CatalogIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Catalog V1 Gateway Sessions  Session Id  Catalog Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/gateway/sessions/{session_id}/observe": {
       "post": {
         "summary": "Observe",
@@ -736,6 +809,95 @@
           "approve"
         ],
         "title": "ApprovalIn"
+      },
+      "CatalogIn": {
+        "properties": {
+          "server": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Server"
+          },
+          "tools": {
+            "items": {
+              "$ref": "#/components/schemas/CatalogTool"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Tools"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "server",
+          "tools"
+        ],
+        "title": "CatalogIn"
+      },
+      "CatalogTool": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 4000,
+            "title": "Description",
+            "default": ""
+          },
+          "input_schema": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Input Schema"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "annotations": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Annotations"
+          },
+          "output_schema": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Schema"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "CatalogTool",
+        "description": "Everything the agent is shown about a tool: all of it is attacker-writable."
       },
       "ContextItem": {
         "properties": {
