@@ -47,6 +47,21 @@ export function ruleChip(id: string): { label: string; title: string } {
   return t ? { label: `${num} · ${t[0]}`, title: `${id}: ${t[1]}` } : { label: id, title: id };
 }
 
+const TOOL_ACTION: Record<string, string> = {
+  list_unread_emails: "Reads your unread emails",
+  read_email: "Opens one email",
+  send_email: "Sends an email",
+  read_file: "Reads a file",
+  read_secret: "Reads a secret from the vault",
+  pay_invoice: "Pays an invoice",
+  delete_file: "Deletes a file",
+};
+
+/** What the tool does, in words a non-developer reads; unknown tools fall back to a neutral label. */
+export function toolAction(tool: string): string {
+  return TOOL_ACTION[tool] ?? "Tool call";
+}
+
 /** One plain sentence that says what happened, built only from the decision's own data. */
 export function headline(d: Decision): string {
   const risky = d.passports.find((p) => p.origin === "untrusted") ?? d.passports.find((p) => p.origin === "secret") ?? d.passports.find((p) => p.origin === "model_invented");

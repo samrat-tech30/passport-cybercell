@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import type { Decision, Evidence } from "../lib/api/types";
-import { headline, preview, ruleChip, whereFrom } from "../lib/format";
+import { headline, preview, ruleChip, toolAction, whereFrom } from "../lib/format";
 import { Stamp } from "./Stamp";
 
 interface Props {
@@ -43,7 +43,7 @@ export function DecisionCard({ d, onEvidence }: Props) {
       <header className="decision__head">
         <span className="decision__step" aria-hidden="true">{String(d.step).padStart(2, "0")}</span>
         <span className="decision__id">
-          <span className="decision__kicker">Step {d.step} · tool call</span>
+          <span className="decision__kicker">{toolAction(d.tool)}</span>
           <code className="decision__tool">{d.tool}</code>
         </span>
         <Stamp verdict={d.verdict} shieldOn={d.shield_on} executed={d.executed} approval={d.approval} />
