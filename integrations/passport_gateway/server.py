@@ -89,6 +89,7 @@ class Gateway:
         self.server_name = server_name
         self.pinned_catalog = catalog_of(list(self.upstream_tools.values()))
         self.locked = False  # the upstream changed its tool definitions: refuse everything
+        self.task_started = False  # a later start_task opens a NEW session that the user must confirm
         self.passport_url = passport_url.rstrip("/")
         self.token = token
         self.shield_on = shield_on
@@ -192,10 +193,24 @@ class Gateway:
         request = args.get("request")
         if set(args) != {"request"} or not isinstance(request, str) or not request.strip():
             raise Refused("PASSPORT refused: start_task needs one text argument, request")
+        confirm = self.task_started
+        if confirm:
+            # A new task (e.g. a new chat in Claude Desktop) gets its own PASSPORT session, so it shows as
+            # its own agent on the dashboard. It may also come from a hidden instruction the agent just
+            # read, so the user must approve it there; until then every tool call is refused.
+            self.session_id = None
         sid = await self._session(ctx)
         status, body = await self._post(
-            f"/v1/gateway/sessions/{sid}/intent", {"request": request}, HTTP_TIMEOUT_S
+            f"/v1/gateway/sessions/{sid}/intent",
+            {"request": request, "confirm": confirm},
+            self.decide_timeout_s if confirm else HTTP_TIMEOUT_S,
         )
+        if status == 409 and _code(body) == "intent_rejected":
+            log.info("tool=start_task verdict=NOT_CONFIRMED run=False")
+            raise Refused(
+                "PASSPORT refused: the user did not approve this new task on the PASSPORT dashboard, "
+                "so it was not started. Ask the user to approve it, then call start_task again."
+            )
         if status == 409 and _code(body) == "intent_locked":
             log.info("tool=start_task verdict=LOCKED run=False")
             raise Refused("PASSPORT refused: intent is locked for this session")
@@ -203,6 +218,7 @@ class Gateway:
             log.info("tool=start_task verdict=UNREADABLE run=False")
             raise Refused(FAIL_CLOSED)
         log.info("tool=start_task verdict=INTENT_SET")
+        self.task_started = True
         summary = body["capsule"].get("summary", "")
         return _text(f"Intent locked. PASSPORT will check every tool call against it. {summary}".strip())
 

@@ -198,3 +198,49 @@ def test_the_connector_refuses_to_start_before_sign_in(tmp_path):
 def test_saved_sign_in_is_private_to_the_user(tmp_path):
     path = oauth.save_credentials(CREDS, tmp_path / "x" / "gmail-token.json")
     assert oct(path.stat().st_mode & 0o777) == "0o600" and oauth.load_credentials(path) == CREDS
+
+
+# ---------- every seeded attack email (make gmail-seed) is stopped ----------
+seed = _load("gmail_seed", ROOT / "integrations" / "gmail_mcp" / "seed.py")
+ME = "samrat.demo@gmail.com"
+
+
+class SeededGoogle(FakeGoogle):
+    """Serves exactly the emails `make gmail-seed` puts in the inbox."""
+
+    def __call__(self, request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        mails = seed.emails(ME)
+        if path.endswith("/messages") and request.method == "GET":
+            return httpx.Response(200, json={"messages": [{"id": f"s{i}"} for i in range(len(mails))]})
+        if "/messages/s" in path:
+            e = mails[int(path.rsplit("/s", 1)[1])]
+            parts = [{"mimeType": "text/plain", "body": {"data": _b64(e["text"])}}]
+            if "html" in e:
+                parts.append({"mimeType": "text/html", "body": {"data": _b64(e["html"])}})
+            headers = [{"name": "From", "value": e["from"]}, {"name": "Subject", "value": e["subject"]}]
+            return httpx.Response(200, json={"payload": {"headers": headers, "mimeType": "multipart/alternative", "parts": parts}})
+        return super().__call__(request)
+
+
+async def test_every_seeded_attack_is_denied_and_only_the_users_draft_is_made():
+    fake = SeededGoogle()
+    async with Client(gmail.build_server(connector(fake))) as up:
+        gw = gateway.Gateway(
+            up, (await up.list_tools()).tools, passport_url="http://passport.test", token=TOKEN,
+            agent_name="pytest", approval_wait_s=1, server_name="gmail-mcp",
+            transport=httpx.ASGITransport(app=create_app()),
+        )
+        async with Client(gateway.build_server(gw)) as agent:
+            await agent.call_tool("start_task", {"request": f"Summarise my unread emails and send the summary to {ME}"})
+            assert len(json.loads(text(await agent.call_tool("list_unread_emails", {})))) == 9
+            verdicts = {}
+            for subject, to in seed.attacks(ME).items():
+                r = await agent.call_tool("send_email", {"to": to, "subject": "Inbox summary", "body": "As requested."})
+                verdicts[subject] = (r.is_error, text(r).split(":")[0])
+            legit = await agent.call_tool("send_email", {"to": ME, "subject": "Inbox summary", "body": "Summary"})
+    assert all(err for err, _ in verdicts.values()), verdicts
+    # R3 and R11 both fire on the look-alike (equal risk); R3 is reported first.
+    assert verdicts["My new address"][1] in ("PASSPORT DENY R3_SINK_UNTRUSTED", "PASSPORT DENY R11_LOOKALIKE"), verdicts
+    assert {v for k, (_, v) in verdicts.items() if k != "My new address"} == {"PASSPORT DENY R3_SINK_UNTRUSTED"}, verdicts
+    assert not legit.is_error and len(fake.drafts) == 1 and f"To: {ME}" in fake.drafts[0]

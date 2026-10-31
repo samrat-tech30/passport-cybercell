@@ -113,6 +113,10 @@ async def intent(session_id: str, body: IntentIn) -> dict[str, Any]:
     request = body.request.strip()
     if not request:
         raise _err(422, "invalid_input", "request: must not be blank")
+    if body.confirm and not await _confirm_task(s, request):
+        raise _err(409, "intent_rejected", "The user did not approve this new task on the dashboard.")
+    if s.user_request:  # set while we waited for the user
+        raise _err(409, "intent_locked", "The intent of this session is already locked.")
     s.user_request = request
     # Nothing has entered the store yet (decide is refused before the intent), so rebuild it.
     s.gate.store = new_store(request, s.world)
@@ -136,6 +140,38 @@ async def intent(session_id: str, body: IntentIn) -> dict[str, Any]:
     )
     await s.emit("capsule", s.gate.capsule.model_dump())
     return {"capsule": s.gate.capsule.model_dump()}
+
+
+async def _confirm_task(s: Session, request: str) -> bool:
+    """A task that started while the agent was already running (e.g. a new chat in Claude Desktop) could
+    have been written by a hidden instruction it just read, so the user approves it first. No answer = no."""
+    message = "The agent started a new task while it was already running. Approve only if you asked for it."
+    reason = Reason(rule_id="R6_OUT_OF_INTENT", verdict=Verdict.REQUIRE_APPROVAL, message=message, risk=60)
+    d = Decision(
+        session_id=s.id,
+        step=len(s.decisions) + 1,
+        tool="start_task",
+        args={"request": s.world.redact(request)},
+        verdict=Verdict.REQUIRE_APPROVAL,
+        rule_id="R6_OUT_OF_INTENT",
+        message=message,
+        risk=60,
+        reasons=[reason],
+        shield_on=s.shield_on,
+    )
+    s.decisions[d.id] = d
+    await s.emit("decision", d.model_dump(mode="json"))
+    if s.shield_on:
+        d.approval = await s.ask_approval(d)
+        d.executed = d.approval == "approved"
+    else:
+        d.executed = True  # monitor mode never waits: the card shows "would ask"
+    repo.save_decision(d)
+    s.audit("gateway_task_confirm", {"decision_id": d.id, "result": d.approval, "request": d.args["request"]})
+    if d.approval:
+        await s.emit("approval_result", {"decision_id": d.id, "result": d.approval})
+    await s.emit("decision", d.model_dump(mode="json"))
+    return d.executed
 
 
 LOCKED_MESSAGE = (

@@ -159,3 +159,49 @@ def test_connected_tools_is_off_without_a_token(monkeypatch):
     reset_settings_for_tests()
     with TestClient(create_app()) as c:
         assert c.get("/v1/gateway/tools").status_code == 503
+
+
+def test_a_confirmed_task_waits_for_the_user_and_no_answer_means_no(client):
+    """A later task in a running gateway (confirm=true) needs the user's approval on the dashboard."""
+    sid = session(client, [SEND_EMAIL], request=None)
+    r = client.post(f"/v1/gateway/sessions/{sid}/intent", json={"request": REQ, "confirm": True}, headers=H)
+    assert (
+        r.status_code == 409 and r.json()["error"]["code"] == "intent_rejected"
+    )  # 1 s wait, nobody answered
+    d = client.get(f"/sessions/{sid}").json()["decisions"]
+    assert [(x["tool"], x["verdict"], x["approval"], x["executed"]) for x in d] == [
+        ("start_task", "REQUIRE_APPROVAL", "timeout", False)
+    ]
+    assert decide_status(client, sid) == 409  # still no intent: every tool call is refused
+
+
+def test_a_confirmed_task_approved_on_the_dashboard_sets_the_intent(client):
+    import threading
+    import time
+
+    from app.sessions import PENDING
+
+    sid = session(client, [SEND_EMAIL], request=None)
+
+    def approve():
+        for _ in range(200):
+            if PENDING:
+                client.post(f"/approvals/{next(iter(PENDING))}", json={"approve": True})
+                return
+            time.sleep(0.005)
+
+    t = threading.Thread(target=approve)
+    t.start()
+    r = client.post(f"/v1/gateway/sessions/{sid}/intent", json={"request": REQ, "confirm": True}, headers=H)
+    t.join()
+    assert r.status_code == 200 and "priya@nimbus.test" in r.json()["capsule"]["recipients"]
+    assert (
+        decide(client, sid, "send_email", {"to": "priya@nimbus.test", "subject": "s", "body": "b"})["run"]
+        is True
+    )
+
+
+def decide_status(c, sid):
+    return c.post(
+        f"/v1/gateway/sessions/{sid}/decide", json={"tool": "send_email", "args": {}}, headers=H
+    ).status_code

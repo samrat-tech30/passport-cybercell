@@ -2137,3 +2137,8 @@ main {
     position: static;
   }
 }
+
+.agents__open {
+  margin-left: auto;
+  font-weight: 500;
+}

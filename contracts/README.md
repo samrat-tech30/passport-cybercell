@@ -58,7 +58,7 @@ Event    = {seq, session_id, type, data, ts}
 | `gateway_call` | `{decision_id, run, message}` (gateway sessions only, after each `/decide` answer, once any approval wait is over) |
 
 ## Error codes
-`invalid_input` 422 · `payload_too_large` 413 · `rate_limited` 429 · `access_code_required`, `gateway_unauthorized` 401 · `scenario_not_found`, `session_not_found`, `segment_not_found`, `approval_not_pending`, `stream_not_available`, `no_eval_yet` 404 · `intent_required`, `intent_locked`, `observe_rejected`, `catalog_changed` 409 · `scenario_required`, `request_mismatch`, `live_llm_disabled`, `invalid_session` 400 · `internal_error` 500 · `gateway_disabled` 503.
+`invalid_input` 422 · `payload_too_large` 413 · `rate_limited` 429 · `access_code_required`, `gateway_unauthorized` 401 · `scenario_not_found`, `session_not_found`, `segment_not_found`, `approval_not_pending`, `stream_not_available`, `no_eval_yet` 404 · `intent_required`, `intent_locked`, `intent_rejected`, `observe_rejected`, `catalog_changed` 409 · `scenario_required`, `request_mismatch`, `live_llm_disabled`, `invalid_session` 400 · `internal_error` 500 · `gateway_disabled` 503.
 
 ## Gateway API (for integrations/passport_gateway only)
 The MCP gateway (`prompts/GATEWAY-PROMPTS.md`) puts PASSPORT between an outside agent and an upstream MCP server. The backend decides; the gateway runs the upstream tool only when told `run: true`. Tools never run inside the backend for these sessions.
@@ -73,7 +73,7 @@ The MCP gateway (`prompts/GATEWAY-PROMPTS.md`) puts PASSPORT between an outside 
 | Method | Path | Body | Success | Errors |
 |---|---|---|---|---|
 | POST | `/v1/gateway/sessions` | `{agent_name: str ≤ 60, client: str ≤ 60, shield_on: bool = true}` | 201 `{session_id}` | 401, 422, 429, 503 |
-| POST | `/v1/gateway/sessions/{id}/intent` | `{request: str ≤ 2000}` | `{capsule: Capsule}`. Only the first call wins. | 409 `intent_locked` (second call); 404 `session_not_found`; 401, 422, 429, 503 |
+| POST | `/v1/gateway/sessions/{id}/intent` | `{request: str ≤ 2000, confirm: bool = false}` | `{capsule: Capsule}`. Only the first call wins. With `confirm: true` (the gateway sends it for every task after the first in one gateway run) the intent first waits up to `GATEWAY_APPROVAL_WAIT_S` for the user to approve it on the dashboard: a `start_task` Decision (REQUIRE_APPROVAL, R6) answered through `POST /approvals/{id}` | 409 `intent_locked` (second call), `intent_rejected` (confirm: rejected or no answer); 404 `session_not_found`; 401, 422, 429, 503 |
 | POST | `/v1/gateway/sessions/{id}/decide` | `{tool: str, args: object}` | `{decision: Decision, run: bool, message: str}` | 409 `intent_required` (no intent yet); 404 `session_not_found`; 401, 413, 422, 429, 503 |
 | POST | `/v1/gateway/sessions/{id}/observe` | `{decision_id, output: str ≤ 20000}` | `{ok: true}` | 409 `observe_rejected`; 404 `session_not_found`; 401, 413, 422, 429, 503 |
 | POST | `/v1/gateway/sessions/{id}/catalog` | `{server: str ≤ 60, tools: [{name: str ≤ 64, description: str ≤ 4000, input_schema: object, title?: str ≤ 200, annotations?: object, output_schema?: object}] ≤ 50}`, names unique | `{sha256, tools: n}`. The first call pins the catalog; the same sha256 again → 200. | 409 `catalog_changed`; 404 `session_not_found`; 401, 413, 422, 429, 503 |

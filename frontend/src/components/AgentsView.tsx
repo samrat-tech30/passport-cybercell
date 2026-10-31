@@ -14,13 +14,19 @@ const STEPS = [
   ["The tool runs only if allowed", "Blocked calls never reach the tool. Risky ones wait for you."],
 ] as const;
 
+/** An agent session opened in its own window: index.html#agent=ses_… */
+function agentFromHash(): string | null {
+  const m = /(?:^#|&)agent=(ses_[0-9a-f]{10})\b/.exec(window.location.hash);
+  return m ? m[1] : null;
+}
+
 /** Architecture box 4, "Connected agents · Live decisions · Approval center". */
 export function AgentsView({ health }: { health: Health | null }) {
   const [items, setItems] = useState<GatewaySessionRow[]>([]);
   const [listError, setListError] = useState<string | null>(null);
   const [disabled, setDisabled] = useState(false);
-  const [selected, setSelected] = useState<string | null>(null);
-  const [pinned, setPinned] = useState(false); // false = follow the newest agent
+  const [selected, setSelected] = useState<string | null>(agentFromHash);
+  const [pinned, setPinned] = useState(() => agentFromHash() !== null); // false = follow the newest agent
   const [elsewhere, setElsewhere] = useState<Decision | null>(null); // an approval from an agent not on screen
   const [evidence, setEvidence] = useState<Evidence | null>(null);
   const { state, attach, detach, answer } = useRun();
@@ -154,6 +160,9 @@ export function AgentsView({ health }: { health: Health | null }) {
                   <p className="eyebrow">
                     {current.agent_name}
                     {current.client && <span className="muted">via {current.client}</span>}
+                    <a className="link agents__open" href={`#agent=${current.session_id}`} target="_blank" rel="noopener noreferrer">
+                      Open in new window
+                    </a>
                   </p>
                   <p className="hero__request">{current.intent ?? "Waiting for the agent to say what the user asked."}</p>
                   {state.capsule && current.intent && <p className="hero__hint">{state.capsule.summary}</p>}

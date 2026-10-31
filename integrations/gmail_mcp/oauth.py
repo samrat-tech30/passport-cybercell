@@ -23,8 +23,13 @@ import httpx
 
 AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 TOKEN_URL = "https://oauth2.googleapis.com/token"  # noqa: S105 - a URL, not a password
-# Read the inbox, and write drafts. No send scope: an allowed send_email becomes a draft you send yourself.
-SCOPES = ("https://www.googleapis.com/auth/gmail.readonly", "https://www.googleapis.com/auth/gmail.compose")
+# Read the inbox and write drafts (the connector), and insert test emails into your own inbox (make
+# gmail-seed, like an IMAP append). No send scope: an allowed send_email becomes a draft you send yourself.
+SCOPES = (
+    "https://www.googleapis.com/auth/gmail.readonly",
+    "https://www.googleapis.com/auth/gmail.compose",
+    "https://www.googleapis.com/auth/gmail.insert",
+)
 
 
 class AuthError(Exception):
