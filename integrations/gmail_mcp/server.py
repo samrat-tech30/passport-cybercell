@@ -43,6 +43,9 @@ API = "https://gmail.googleapis.com/gmail/v1/users/me"
 SERVED = ("list_unread_emails", "read_email", "send_email")
 MAX_EMAILS = 10
 MAX_BODY = 4000
+# PASSPORT labels at most 20,000 characters per tool output (/observe); larger is refused, so the
+# gateway fails closed. The list is shrunk to fit, so what the agent reads is exactly what was labelled.
+MAX_OUTPUT = 18_000
 MIN_KEY_CHARS = 32
 NO_KEY = "gmail_mcp: this server is only reachable through PASSPORT (GMAIL_GATEWAY_KEY missing or too short)"
 # One plain address, nothing glued on: "a@x.com, b@evil.test" must not slip a second recipient past the trace.
@@ -85,6 +88,16 @@ def body_text(payload: dict[str, Any]) -> str:
     return found.get("text/plain", "").strip()[:MAX_BODY]
 
 
+def fit(emails: list[dict[str, Any]], limit: int = MAX_OUTPUT) -> list[dict[str, Any]]:
+    """Cut every body by the same amount until the JSON of the whole list fits PASSPORT's limit."""
+    cap = MAX_BODY
+    while True:
+        out = [dict(e, body=e["body"] if len(e["body"]) <= cap else e["body"][:cap] + " […]") for e in emails]
+        if len(json.dumps(out, ensure_ascii=False)) <= limit or cap <= 100:
+            return out
+        cap = int(cap * 0.8)
+
+
 def header(payload: dict[str, Any], name: str) -> str:
     for h in payload.get("headers") or []:
         if str(h.get("name", "")).lower() == name.lower():
@@ -124,7 +137,7 @@ class Gmail:
         for n, m in enumerate(listed.get("messages") or [], start=1):
             self.ids[n] = str(m["id"])
             out.append(await self._email(n))
-        return out
+        return fit(out)
 
     async def read(self, n: int) -> dict[str, Any]:
         if n not in self.ids:

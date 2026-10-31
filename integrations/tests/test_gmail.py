@@ -146,6 +146,13 @@ async def test_unknown_tools_and_unlisted_ids_are_refused():
         assert "list_unread_emails first" in text(await c.call_tool("read_email", {"email_id": 7}))
 
 
+def test_a_long_inbox_is_shrunk_to_what_passport_can_label():
+    emails = [{"id": i, "from": "a@example.test", "subject": "s", "body": "x\n" * 2500} for i in range(1, 11)]
+    out = gmail.fit(emails)
+    assert len(json.dumps(out, ensure_ascii=False)) <= 18_000 < 20_000  # the /observe limit
+    assert all(e["body"].endswith(" […]") for e in out) and [e["id"] for e in out] == list(range(1, 11))
+
+
 # ---------- the whole path: agent → gateway → backend → real-Gmail connector ----------
 async def test_a_hidden_instruction_in_a_real_email_cannot_choose_the_recipient():
     fake = FakeGoogle()
